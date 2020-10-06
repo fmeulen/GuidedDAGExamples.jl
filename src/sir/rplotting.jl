@@ -45,7 +45,6 @@ colors <- c("khaki2", "indianred3", "black")
 colors <- c("khaki2", "red2", "black")
 
 
-
 pobs <- ddobs %>% mutate(type=as.factor(z)) %>%
     mutate(type=fct_recode(type, S="1", I= "2", R="3"))%>%
      ggplot(aes(x=x,y=y,fill=type)) + geom_raster() +
@@ -97,9 +96,11 @@ ptrueobs <- ddsim %>% mutate(type=as.factor(ztrueobs)) %>%
     ggtitle("observed data")
 
 
+
 library(gridExtra)
 pdf(paste0(figdir,"/all.pdf"),width=6,height=7, pointsize=10)
-grid.arrange(ptrueobs, pobs, pinit, pmid, pfinal,ptrue)
+#grid.arrange(ptrueobs, pobs, pinit, pmid, pfinal,ptrue)
+grid.arrange(ptrueobs, pinit, pmid, pfinal,ptrue, ncol=2, layout_matrix=cbind(c(1,2,4),c(1,3,5)))
 dev.off()
 
 
