@@ -31,7 +31,7 @@ n = 100
 𝒩 = set_neighbours(n)
 λ= 2.5; μ=0.6; ν=0.1; τ = 0.1
 Ptrue = SIRforward(λ, μ, ν, τ, 𝒩)
-x0 = vcat(_I_, fill(_S_,n-2),_I_)
+#x0 = vcat(_I_, fill(_S_,n-2),_I_)
 x0 = vcat(fill(_I_,7), fill(_S_,n-7))
 
 
