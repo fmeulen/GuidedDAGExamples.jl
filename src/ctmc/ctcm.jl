@@ -179,7 +179,7 @@ end
 
 
 times_forw, events_forw = sample(t0,x0, RN;Tend=Tend)
-xT = last(events_forw)
+xT = last(events_forw) #+ 0.2*randn(length(x0))
 
 μ = 0.0 * μT(Tend, x0, xT)
 Σ = ΣT(RN,xT)#*Tend/sum(xT))#Σ =  1*Matrix(1.0I,2,2)
