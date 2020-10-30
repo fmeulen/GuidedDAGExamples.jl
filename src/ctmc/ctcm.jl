@@ -195,32 +195,6 @@ plot!(p, times_guid, first.(events_guid),label="guided el1")
 plot!(p, times_guid, last.(events_guid),label="guided el2")
 
 
-# Independence MH
-res = [[times_guid, events_guid, ll]]
-for i=1:1000
-    global ll, times_guid, events_guid, res
-    times_guidᵒ, events_guidᵒ = sample(t0,x0, RNᵒ)
-    llᵒ = loglik(times_guidᵒ, events_guidᵒ, RNᵒ)
-#    println(llᵒ-ll)
-    if log(rand()) < llᵒ - ll
-                push!(res,[times_guidᵒ, events_guidᵒ, llᵒ])
-        ll = llᵒ
-    else
-        push!(res,[times_guid, events_guid, ll])
-    end
-end
-
-times_guid, events_guid = last(res)[1], last(res)[2]
-print(last.(res))
-
-p = plot(times_forw, first.(events_forw),label="forward el1", legend = :outertopleft)
-plot!(p, times_forw, last.(events_forw),label="forward el2")
-plot!(p, times_guid, first.(events_guid),label="guided el1")
-plot!(p, times_guid, last.(events_guid),label="guided el2")
-
-
-println(times_guid[end-5:end])
-println(eventvals[end-5:end])
 
 # get guiding intensities of guided proposal at all event times
 [λ(times_guid[i], events_guid[i], RNᵒ) for i ∈ eachindex(times_guid)]

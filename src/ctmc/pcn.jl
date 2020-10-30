@@ -5,7 +5,7 @@ x = rexp(z)
 
 R = RNᵒ
 
-function sample_pcn(t0,x0,z, R::Network; Tend=nothing)
+function sample_pcn(t0,x0,z, ρ, R::Network; Tend=nothing)
     t = t0
     x = x0
     T = zeros(R.nreact)
@@ -16,7 +16,7 @@ function sample_pcn(t0,x0,z, R::Network; Tend=nothing)
     eventvals = [x]
     if isnothing(Tend)  Tend=R.T  end
     while t < Tend
-        T, P, x, t, z, counter = simstep_pcn!(T, P, x, t, z, counter, R)
+        T, P, x, t, z, counter = simstep_pcn!(T, P, x, t, z, counter, ρ, R)
         push!(eventtimes, t)
         push!(eventvals, x)
     end
@@ -27,7 +27,7 @@ function sample_pcn(t0,x0,z, R::Network; Tend=nothing)
     eventtimes, eventvals, z
 end
 
-function simstep_pcn!(T, P, x, t, z, counter, R::GuidedReactionNetwork; ρ=0.7)
+function simstep_pcn!(T, P, x, t, z, counter, ρ, R::GuidedReactionNetwork)
     aᵒ = λᵒ(t,x,R)
     Δt = abs.((P - T) ./ aᵒ)
     (Δ, μ) = findmin(Δt)
@@ -54,13 +54,14 @@ RNᵒ = guidedreactionnetwork(RN,Tend,xT,μ,Σ)
 times_guid, events_guid = sample(t0,x0, RNᵒ)
 
 
+ρ = 0.99
 z = [randn(1000000) for _ ∈ 1:RNᵒ.nreact]
-times_guid, events_guid, z = sample_pcn(t0,x0,z, RNᵒ)
+times_guid, events_guid, z = sample_pcn(t0,x0,z,ρ, RNᵒ)
 ll = loglik(times_guid, events_guid, RNᵒ)
 
-function mh_pcn(t0, x0, RNᵒ, iter)
+function mh_pcn(t0, x0, ρ, RNᵒ, iter)
     z = [randn(10000) for _ ∈ 1:RNᵒ.nreact]
-    times_guid, events_guid, z = sample_pcn(t0,x0,z, RNᵒ)
+    times_guid, events_guid, z = sample_pcn(t0, x0, z, ρ, RNᵒ)
     ll = loglik(times_guid, events_guid, RNᵒ)
 
     Z = [z]
@@ -71,7 +72,7 @@ function mh_pcn(t0, x0, RNᵒ, iter)
     acc = 0
 
     for j in 1:iter
-        times_guidᵒ, events_guidᵒ, zᵒ = sample_pcn(t0,x0,z, RNᵒ)
+        times_guidᵒ, events_guidᵒ, zᵒ = sample_pcn(t0, x0, z, ρ, RNᵒ)
         llᵒ = loglik(times_guidᵒ, events_guidᵒ, RNᵒ)
         println(llᵒ-ll)
         if log(rand()) < llᵒ - ll
@@ -91,7 +92,8 @@ function mh_pcn(t0, x0, RNᵒ, iter)
     T, E, LL
 end
 
-T, E, LL = mh_pcn(t0, x0, RNᵒ, 1000)
+iter = 100
+T, E, LL = mh_pcn(t0, x0, .94, RNᵒ, iter)
 
 
 
@@ -99,7 +101,7 @@ p = plot(times_forw, first.(events_forw),label="forward el1", legend = :outertop
 plot!(p, times_forw, last.(events_forw),label="forward el2")
 
 #for i ∈ Set([2,4,10])
-for i ∈ [2, 1000]
+for i ∈ 1:20:iter
     plot!(p, T[i], first.(E[i]),label="guided el1")
     plot!(p, T[i], last.(E[i]),label="guided el2")
 end
