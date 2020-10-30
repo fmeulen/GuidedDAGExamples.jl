@@ -82,19 +82,6 @@ plot!(p, eventtimes, last.(eventvals))
 λᵒ(s, x, R::GuidedReactionNetwork) = λ(x, R) .* exp.(ψ(s, x,R)/(R.T-s))
 logh̃(s,x,R::GuidedReactionNetwork) = logpdf(MvNormal(x + R.μ*(R.T-s), R.Σ*(R.T - s)), R.xT)
 
-#--------- begin Moritz' stuff
-Ei(x) = -real(expint(Complex(-x)))
-g(u, a) = exp(-a/u)*u + a*Ei(-a/u)
-
-"""
-    g(l, u, a)
-
-Integrate  exp(-a/x) from l to u
-"""
-g(l, u, a) = g(u, a) - g(l, a)
-g(1, 2, pi) # should be 0.124
-# https://www.wolframalpha.com/input/?i=integrate+exp%28-pi%2Fu%29+from+1+to+2
-#---------end  Moritz' stuff
 
 
 # ei(x) = expint(x)[1]
@@ -120,7 +107,8 @@ function simstep!(T, P, x, t, R::GuidedReactionNetwork; approximate=true)#false)
     (Δ, μ) = findmin(Δt)
     x += R.ξ[μ]   # update state according to reaction taking place
     t += Δ  # update clock time
-    T += Δ * aᵒ  # update internal times
+    Ψ = ψ(0.0, x, R)
+    T += λ(x,R) .* [g(R.T - t, R.T - t + Δ, -Ψ[ℓ]) for ℓ ∈ 1:R.nreact]  # update internal times
     P[μ] += randexp()
     T, P, x, t
 end
