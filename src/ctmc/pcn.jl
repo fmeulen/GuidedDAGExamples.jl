@@ -5,7 +5,7 @@ x = rexp(z)
 
 R = RNᵒ
 
-function sample_pcn(t0,x0,z, ρ, R::Network; Tend=nothing)
+function sample_pcn(t0, Tend, x0, z, ρ, R::Network)
     t = t0
     x = x0
     T = zeros(R.nreact)
@@ -14,7 +14,7 @@ function sample_pcn(t0,x0,z, ρ, R::Network; Tend=nothing)
     P = rexp([z[i][1] for i ∈ 1:R.nreact])
     eventtimes = [t]
     eventvals = [x]
-    if isnothing(Tend)  Tend=R.T  end
+
     while t < Tend
         T, P, x, t, z, counter = simstep_pcn!(T, P, x, t, z, counter, ρ, R)
         push!(eventtimes, t)
@@ -50,18 +50,18 @@ xT = last(events_forw)
 
 μ = 0.0 * μT(Tend, x0, xT)
 Σ = ΣT(RN,xT)
-RNᵒ = guidedreactionnetwork(RN,Tend,xT,μ,Σ)
-times_guid, events_guid = sample(t0,x0, RNᵒ)
+RNᵒ = guidedreactionnetwork(RN,Tend + 0.1,xT,μ,Σ)  # let op: Tend iets groter gemaakt
+times_guid, events_guid = sample(t0, Tend, x0, RNᵒ)
 
 
 ρ = 0.99
 z = [randn(1000000) for _ ∈ 1:RNᵒ.nreact]
-times_guid, events_guid, z = sample_pcn(t0,x0,z,ρ, RNᵒ)
+times_guid, events_guid, z = sample_pcn(t0, Tend, x0, z, ρ, RNᵒ)
 ll = loglik(times_guid, events_guid, RNᵒ)
 
 function mh_pcn(t0, x0, ρ, RNᵒ, iter)
     z = [randn(10000) for _ ∈ 1:RNᵒ.nreact]
-    times_guid, events_guid, z = sample_pcn(t0, x0, z, ρ, RNᵒ)
+    times_guid, events_guid, z = sample_pcn(t0, Tend, x0, z, ρ, RNᵒ)
     ll = loglik(times_guid, events_guid, RNᵒ)
 
     Z = [z]
@@ -72,12 +72,12 @@ function mh_pcn(t0, x0, ρ, RNᵒ, iter)
     acc = 0
 
     for j in 1:iter
-        times_guidᵒ, events_guidᵒ, zᵒ = sample_pcn(t0, x0, z, ρ, RNᵒ)
+        times_guidᵒ, events_guidᵒ, zᵒ = sample_pcn(t0, Tend, x0, z, ρ, RNᵒ)
         llᵒ = loglik(times_guidᵒ, events_guidᵒ, RNᵒ)
         println(llᵒ-ll)
         if log(rand()) < llᵒ - ll
             ll = llᵒ
-            z = zᵒ
+            z .= zᵒ
             push!(T, times_guidᵒ)
             push!(E, events_guidᵒ)
             acc += 1
@@ -87,13 +87,14 @@ function mh_pcn(t0, x0, ρ, RNᵒ, iter)
             push!(E, events_guid)
         end
         push!(LL,ll)
+        #println(ll)
     end
-    println("Average acceptance: $acc")
+    println("Average acceptance: $acc/$iter")
     T, E, LL
 end
 
-iter = 100
-T, E, LL = mh_pcn(t0, x0, .94, RNᵒ, iter)
+iter = 1000
+T, E, LL = mh_pcn(t0, x0, .95, RNᵒ, iter)
 
 
 
