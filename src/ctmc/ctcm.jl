@@ -24,13 +24,18 @@ struct GuidedReactionNetwork <: Network
     ξ::Array{Array{Int64,1},1}
     nreact::Int64
     T::Float64 # endtime
-    xT::Array{Float64,1} # endpoint # FIXME depending on noise Vector{Int64}
-    μ::Array{Float64,1}
-    Σ::Array{Float64,2} # noise in guiding term
+    xT::Array{Int64,1} # endpoint
+    μ::Array{Float64,1}  # mean of X̃
+    Σ::Array{Float64,2} # cov matrix of X̃
 end
 
 guidedreactionnetwork(RN::ReactionNetwork,T,xT,μ,Σ) = GuidedReactionNetwork(RN.λ, RN.ρ, RN.ξ, RN.nreact, T, xT, μ, Σ)
 
+"""
+    simstep!(T, P, x, t, R::ReactionNetwork)
+
+one step of next-reaction method
+"""
 function simstep!(T, P, x, t, R::ReactionNetwork)
     a = λ(x,R)
     Δt = abs.((P - T) ./ a)
@@ -42,6 +47,13 @@ function simstep!(T, P, x, t, R::ReactionNetwork)
     T, P, x, t
 end
 
+
+"""
+    sample(t0, Tend, x0, R::Network)
+
+Sample network starting at time t0 in state x0 up to time Tend
+Returns eventtimes and eventvalues
+"""
 function sample(t0, Tend, x0, R::Network)
     t = t0
     x = x0
@@ -57,18 +69,16 @@ function sample(t0, Tend, x0, R::Network)
     if last(eventtimes) >= Tend
         deleteat!(eventtimes,length(eventtimes))
         deleteat!(eventvals,length(eventvals))
-        push!(eventtimes, Tend)
-        push!(eventvals, last(eventvals))  # can also choose to put xT here
+#        push!(eventtimes, Tend)
+#        push!(eventvals, last(eventvals))  # can also choose to put xT here
     end
     eventtimes, eventvals
 end
 
 #####################################################################
-# Forward simulation
+# Example forward simulation
 
-# specify reactions
-#RN = ReactionNetwork(0.5, 6.0, [[1,0], [-1,0], [0,1], [0,-1]],4)
-RN = ReactionNetwork(0.5, 6.0, [[2,1], [-1,0], [0,1], [0,-1]],4)
+RN = ReactionNetwork(0.5, 6.0, [[1,0], [-1,0], [0,1], [0,-1]],4)
 λ(x, RN::Network) =[RN.ρ/(1.0+x[2]), RN.λ*(x[1] >= 1), RN.ρ/(1.0+x[1]), RN.λ*(x[2] >= 1)]
 
 t0 = 0.0
@@ -79,14 +89,21 @@ eventtimes, eventvals = sample(t0, Tend, x0, RN)
 p = plot(eventtimes, first.(eventvals))
 plot!(p, eventtimes, last.(eventvals))
 
-
 #####################################################################
 # Guiding
 ψ(s, x, R::GuidedReactionNetwork) = [LinearAlgebra.dot(-0.5R.ξ[ℓ] + R.xT - (x + R.μ *(R.T - s)), R.Σ\R.ξ[ℓ]) for ℓ ∈ eachindex(R.ξ)]  # assumigng Σ is identity matrix
 λᵒ(s, x, R::GuidedReactionNetwork) = λ(x, R) .* exp.(ψ(s,x,R)/(R.T - s))
 logh̃(s,x,R::GuidedReactionNetwork) = logpdf(MvNormal(x + R.μ*(R.T-s), R.Σ*(R.T - s)), R.xT)
 
-function simstep!(T, P, x, t, R::GuidedReactionNetwork; approximate=true)#false)
+"""
+     simstep!(T, P, x, t, R::GuidedReactionNetwork; approximate=true)
+
+One step of next-reaction method for guided reaction network.
+
+Approximate method treats the time-dependent density of time-independent, by plugging in the left-value of t
+The exact method is still buggy.
+"""
+function simstep!(T, P, x, t, R::GuidedReactionNetwork; approximate=true) #FIXME
     aᵒ = λᵒ(t,x,R)
     if approximate
         Δt = abs.((P - T) ./ aᵒ)
@@ -98,9 +115,12 @@ function simstep!(T, P, x, t, R::GuidedReactionNetwork; approximate=true)#false)
     (Δ, μ) = findmin(Δt)
     x += R.ξ[μ]   # update state according to reaction taking place
     t += Δ  # update clock time
-    Ψ = ψ(0.0, x, R)
-    #T += λ(x,R) .* [g(R.T - t, R.T - t + Δ, -Ψ[ℓ]) for ℓ ∈ 1:R.nreact]  # update internal times
-    T += Δ * aᵒ
+    if approximate
+        Ψ = ψ(0.0, x, R)
+        T += λ(x,R) .* [g(R.T - t, R.T - t + Δ, -Ψ[ℓ]) for ℓ ∈ 1:R.nreact]  # update internal times
+    else
+        T += Δ * aᵒ
+    end
     P[μ] += randexp()
     T, P, x, t
 end
@@ -110,23 +130,36 @@ end
 
 (t,v) = (eventtimes, eventvals)
 """
-function loglik(t,v, Rᵒ) #FIXME
+function loglik(t,v, Rᵒ; sk=1) #FIXME
     ll = logh̃(t[1],v[1],Rᵒ)
-    for k ∈ 1:length(t)-1
-        #if t[k+1] >= Rᵒ.T @error "eventtime larger than T"  end
+    for k ∈ 1:length(t)-1-sk
         ll += logh̃(t[k+1],v[k],Rᵒ) - logh̃(t[k],v[k],Rᵒ)
-        ll += (t[k+1]-t[k]) * sum(λᵒ(t[k],v[k], Rᵒ) - λ(v[k], Rᵒ))
+        #ll += (t[k+1]-t[k]) * sum(λᵒ(t[k],v[k], Rᵒ) - λ(v[k], Rᵒ))
+        L = λ(v[k], Rᵒ)
+        Ψ = ψ(0.0, v[k], Rᵒ)
+        for ℓ ∈ 1:Rᵒ.nreact
+            if iszero(Ψ[ℓ])
+                intcontrib = 0.0
+            else
+                intcontrib = g(Rᵒ.T-t[k+1], Rᵒ.T-t[k], -Ψ[ℓ]) - (t[k+1]-t[k])
+            end
+            if isnan(intcontrib)
+                println("k=$k, ℓ=$ℓ, Ψ=$Ψ")
+            end
+            Ψℓ = Ψ[ℓ]
+            # problems if Ψℓ>0 on very last interval
+        #    println("k=$k, ℓ=$ℓ, intcontrib=$intcontrib, Ψℓ = $Ψℓ")
+            ll += L[ℓ] * intcontrib
+        end
     end
     ll
 end
+
 #####################################################################
 
 RN = ReactionNetwork(1.5, 3.0, [[1,1], [-1,0], [0,1], [0,-1]],4)
 Tend = 33.0
 x0 = [16,5]
-xT = [20,3]
-
-Σ = 0.0 *  Matrix(1.0I,2,2)
 
 function ΣT(R::ReactionNetwork, xT)
     LT = λ(xT, R)
@@ -139,15 +172,17 @@ end
 
 μT(Tend, x0, xT) = (xT-x0)/Tend
 
-Tend = 40.0
-times_forw, events_forw = sample(t0,x0, RN;Tend=Tend)
-xT = last(events_forw) #+ 0.001*fill(1.0,2)#*randn(length(x0))
+times_forw, events_forw = sample(t0, Tend, x0, RN)
+xT = last(events_forw)
 
 μ = 0.0 * μT(Tend, x0, xT)
-Σ = 0.1 * ΣT(RN,xT)
-RNᵒ = guidedreactionnetwork(RN,Tend,xT,μ,Σ)
+Σ = .1 * ΣT(RN,xT)  # this choice of open to discussion (a smaller multiplicative factor
+# (here 0.1) causes a stronger pull, and, once the endpoint is reached, to stay there)
+
+h = 0.001 # added to shift conditioning time slightly beyond T
+RNᵒ = guidedreactionnetwork(RN, Tend  +h, xT ,μ, Σ)
 times_guid, events_guid = sample(t0, Tend, x0, RNᵒ)
-#ll = loglik(times_guid, events_guid, RNᵒ)
+ll = loglik(times_guid, events_guid, RNᵒ)
 
 print(last(events_guid), xT)
 
@@ -156,57 +191,8 @@ plot!(p, times_forw, last.(events_forw),label="forward el2")
 plot!(p, times_guid, first.(events_guid),label="guided el1")
 plot!(p, times_guid, last.(events_guid),label="guided el2")
 
-
+ll = loglik(times_forw, events_forw, RNᵒ)
+ll = loglik(times_guid, events_guid, RNᵒ)
 
 # get guiding intensities of guided proposal at all event times
 #[λ(times_guid[i], events_guid[i], RNᵒ) for i ∈ eachindex(times_guid)]
-
-
-if false
-
-# new try
-#ζ(x, R::GuidedReactionNetwork) = [LinearAlgebra.dot(R.xT-x,R.ξ[ℓ]) for ℓ ∈ eachindex(R.ξ)]
-ζ(s, x, R::GuidedReactionNetwork) = [LinearAlgebra.dot(R.xT - x - (R.T-s)*R.μ, R.ξ[ℓ]) /λ(R.xT, R)[ℓ] for ℓ ∈ eachindex(R.ξ)]
-λ(s, x, R::GuidedReactionNetwork) = λ(x, R) .* ζ(s, x, R) /(R.T - s)
-
-function simstep!(T, P, x, t, R::GuidedReactionNetwork)
-    z = ζ(t, x, R)
-    imin = findall(x-> x < 0, z)
-    ipos = findall(x-> x >= 0, z)
-    a = λ(x,R)
-    #aᵒ = λ(t,x,R)
-    Δt = abs.((P - T) ./ a)
-    for ℓ ∈ ipos
-        Δt[ℓ] = (R.T-t) * (1-exp(-Δt[ℓ]/z[ℓ]))
-    end
-    (Δ, μ) = findmin(Δt)
-    for ℓ ∈ imin
-        T[ℓ] += Δ * a[ℓ]  # update internal times ## ADJUST
-    end
-    for ℓ ∈ ipos
-        T[ℓ] += a[ℓ] * z[ℓ] *log((R.T-t)/(R.T-t-Δ))
-    end
-    t += Δ  # update clock time
-    x += R.ξ[μ]   # update state according to reaction taking place
-    P[μ] += randexp()
-    T, P, x, t
-end
-
-end
-function τleap(t0,x0, R::GuidedReactionNetwork; h=0.1)
-    t = t0
-    x = x0
-    eventtimes = [t]
-    eventvals = [x]
-    while t < R.T
-        L = λ(t,x,R)
-    #    println(L)
-        for ℓ ∈ 1:R.nreact
-            x += R.ξ[ℓ] * Random.rand(Poisson(h*L[ℓ]))
-        end
-        t += h
-        push!(eventtimes, t)
-        push!(eventvals, x)
-    end
-    eventtimes, eventvals
-end

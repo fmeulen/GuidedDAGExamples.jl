@@ -6,12 +6,18 @@ g(u, a) = exp(-a/u)*u + a*Ei(-a/u)
 
 Integrate  exp(-a/x) from l to u
 """
-g(l, u, a) = g(u, a) - g(l, a)
-
+function g(l, u, a)
+    if iszero(a)
+        out = u-l
+    else
+        out = g(u, a) - g(l, a)
+    end
+    out
+end
 
 g(1, 2, pi) # should be 0.124
 # https://www.wolframalpha.com/input/?i=integrate+exp%28-pi%2Fu%29+from+1+to+2
-
+g(1,2,0.001)
 
 function rootsolve(λ_, s, ψ_, c)
     U = H(λ_, s, ψ_, c)
@@ -49,24 +55,3 @@ rootsolve(λ_, s, ψ_, c)
 
 z = find_zero((U,∇U), 0.0, Roots.Newton())
 U(z)
-
-
-
-
-rootsolve(12.0, 2.0, -ψ_, 1.0)
-
-fzero(U,0.0)
-
-fzero(U,0.0)
-#plot(H(λ_, s, ψ_, c), 0, s)
-
-
-
-# some old stuff.
-if false
-    # ei(x) = expint(x)[1]
-    # ei1(x)= expint_E1(x)[1]
-    # g(ℓ, u, α) = α>0 ? u*exp(-α/u) - ℓ*exp(-α/ℓ) + α*(ei(α/u) - ei(α/ℓ)) : u*exp(-α/u) - ℓ*exp(-α/ℓ) - α*(ei1(-α/ℓ) - ei1(-α/u))
-    G(λℓ, ψℓ, Tmint, PℓminTℓ) = (Δ) -> λℓ * g(Tmint-Δ, Tmint, -ψℓ) - PℓminTℓ
-    ∇G(λℓ, ψℓ, t,R::GuidedReactionNetwork) = (Δ) -> -λℓ *   exp(ψℓ/(R.T-t-Δ))
-end

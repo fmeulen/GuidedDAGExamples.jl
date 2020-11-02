@@ -11,7 +11,7 @@ function sample_pcn(t0, Tend, x0, z, ρ, R::Network)
     T = zeros(R.nreact)
     counter = fill(2,R.nreact)
 
-    P = rexp([z[i][1] for i ∈ 1:R.nreact])
+    P = rexp.([z[i][1] for i ∈ 1:R.nreact])
     eventtimes = [t]
     eventvals = [x]
 
@@ -23,7 +23,10 @@ function sample_pcn(t0, Tend, x0, z, ρ, R::Network)
     if last(eventtimes) >= Tend
         deleteat!(eventtimes,length(eventtimes))
         deleteat!(eventvals,length(eventvals))
+        push!(eventtimes, Tend)
+        push!(eventvals, last(eventvals))  # can also choose to put xT here
     end
+    #println(counter)
     eventtimes, eventvals, z
 end
 
@@ -34,30 +37,44 @@ function simstep_pcn!(T, P, x, t, z, counter, ρ, R::GuidedReactionNetwork)
     x += R.ξ[μ]   # update state according to reaction taking place
     t += Δ  # update clock time
     T += Δ * aᵒ  # update internal times
-    zᵒ = ρ * z[μ][counter[μ]] + sqrt(1-ρ^2) * randn()  # pCN step
+    if rand() < 1.05
+        zᵒ = ρ * z[μ][counter[μ]] + sqrt(1-ρ^2) * randn()  # pCN step
+        z[μ][counter[μ]] = zᵒ
+    else
+        zᵒ = z[μ][counter[μ]]
+    end
     P[μ] += rexp(zᵒ)
     counter[μ] += 1
     T, P, x, t, z, counter
 end
 
 RN = ReactionNetwork(1.5, 3.0, [[1,1], [-1,0], [0,1], [0,-1]],4)
-Tend = 53.0
+Tend = 33.0
 x0 = [16,5]
 
 times_forw, events_forw = sample(t0,x0, RN;Tend=Tend)
 xT = last(events_forw)
+print(loglik(times_forw, events_forw, RNᵒ))
+p = plot(times_forw, first.(events_forw),label="forward el1", legend = :outertopleft)
+plot!(p, times_forw, last.(events_forw),label="forward el2")
 
 
 μ = 0.0 * μT(Tend, x0, xT)
 Σ = ΣT(RN,xT)
-RNᵒ = guidedreactionnetwork(RN,Tend + 0.1,xT,μ,Σ)  # let op: Tend iets groter gemaakt
+RNᵒ = guidedreactionnetwork(RN,Tend + 0.01,xT,μ,Σ)  # let op: Tend iets groter gemaakt
 times_guid, events_guid = sample(t0, Tend, x0, RNᵒ)
-
+loglik(times_guid, events_guid, RNᵒ)
 
 ρ = 0.99
 z = [randn(1000000) for _ ∈ 1:RNᵒ.nreact]
 times_guid, events_guid, z = sample_pcn(t0, Tend, x0, z, ρ, RNᵒ)
 ll = loglik(times_guid, events_guid, RNᵒ)
+
+p = plot(times_forw, first.(events_forw),label="forward el1", legend = :outertopleft)
+plot!(p, times_forw, last.(events_forw),label="forward el2")
+plot!(p, times_guid, first.(events_guid),label="guided el1")
+plot!(p, times_guid, last.(events_guid),label="guided el2")
+
 
 function mh_pcn(t0, x0, ρ, RNᵒ, iter)
     z = [randn(10000) for _ ∈ 1:RNᵒ.nreact]
@@ -93,16 +110,16 @@ function mh_pcn(t0, x0, ρ, RNᵒ, iter)
     T, E, LL
 end
 
-iter = 1000
-T, E, LL = mh_pcn(t0, x0, .95, RNᵒ, iter)
+iter = 300
+T, E, LL = mh_pcn(t0, x0, .9999, RNᵒ, iter)
 
 
 
 p = plot(times_forw, first.(events_forw),label="forward el1", legend = :outertopleft)
 plot!(p, times_forw, last.(events_forw),label="forward el2")
 
-#for i ∈ Set([2,4,10])
-for i ∈ 1:20:iter
+
+for i ∈ 1:1:10
     plot!(p, T[i], first.(E[i]),label="guided el1")
     plot!(p, T[i], last.(E[i]),label="guided el2")
 end
