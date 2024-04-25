@@ -2,6 +2,7 @@ using StaticArrays
 abstract type MarkovProcess end
 
 struct SIRforward <: MarkovProcess
+        ξ::Float64
         λ::Float64
         μ::Float64
         ν::Float64
@@ -10,6 +11,7 @@ struct SIRforward <: MarkovProcess
 end
 
 struct SIRguided <: MarkovProcess
+    ξ::Float64
     λ::Float64
     μ::Float64
     ν::Float64
@@ -17,11 +19,10 @@ struct SIRguided <: MarkovProcess
     𝒩::Array{Array{Int64,1},1}
 end
 
-@enum State::UInt8 _S_=1 _I_=2 _R_=3 _L_=7
+@enum State::UInt8 _S_=1 _I_=2 _R_=3 _L_=0 
 const 𝒳 = @SVector [_S_,_I_,_R_]
 
 # state space of one person
-const ξ = 0.999 # so if no infected neighbours, then with prob 1-ξ still go from susceptible to infected
 const BF = [@SVector([3,1,2]), @SVector([1,2,3]), @SVector([2,3,1])]
 
 
@@ -36,6 +37,18 @@ x ∈ 𝒳 is mapped into integer
 """
 ind(x) = Int(x)
 
+
+function observationmessage(x::State)
+    if x==_S_ 
+        return(SA_F64[1, 0, 0])
+    elseif x==_I_
+        return(SA_F64[0, 1, 0])
+    elseif x==_R_
+        return(SA_F64[0, 0, 1])
+    else 
+        return(SA_F64[1, 1, 1])  
+    end
+end
 
 """
     set_neighbours(n)
@@ -54,6 +67,7 @@ function set_neighbours(n)
     𝒩
 end
 
+#### forward sampling #####
 """
     sample𝒳(x,z,p)
 
@@ -63,8 +77,7 @@ p =  [1/4, 1/2, 1/4]
 z = rand()
 sample𝒳(_S_, z, p)
 """
-function sample𝒳(x, z::Float64,p) # provide current state
-    u = z
+function sample𝒳(x, u::Float64,p) # provide current state
     b, f = BF[Int(x)][1], BF[Int(x)][3]
     if u < p[b] return(𝒳[b])
     elseif u > 1-p[f] return(𝒳[f])
@@ -84,7 +97,7 @@ Computes number of infected neighbours for the i-th individual in configuration 
 """
 nr_infected_neighb(x,𝒩,i) = x[i] == _S_ ? sum(x[𝒩[i]].==_I_) : 0
 
-function pi(P::SIRforward, i, x)
+function κ(P::SIRforward, i, x) # used to be called pi
     if x[i] == _S_
         pS(P.λ * nr_infected_neighb(x,P.𝒩,i) * P.τ)
     elseif x[i] == _I_
@@ -95,28 +108,36 @@ function pi(P::SIRforward, i, x)
 end
 
 """
-    Qstep(P::SIRforward,i,x,zi)
+    sample_particle(P::SIRforward,i,x,z)
 
 One forward simulation step for invdividual `i`, if the present configuration of all individuals is `x`
 i: index of individual to be forward simulated
 x: current state of all individuals
-zi: innovation for this step
+z: innovation for this step
 """
-function Qstep(P::SIRforward,i,x,zi)
-    sample𝒳(x[i], zi, pi(P, i, x))
+function sample_particle(P::SIRforward, i, x, z) 
+    p = κ(P, i, x)
+    sample𝒳(x[i], z, p)
 end
 
-Pstep(P::SIRforward, x, z) = [Qstep(P,i,x,z[i]) for i in eachindex(x)]
+sample(P::SIRforward, x, z) = [sample_particle(P, i, x, z[i]) for i in eachindex(x)]
 
-function sample(P::SIRforward, nsteps, x0)
+"""
+    sample_trajectory(P::SIRforward, n::Int, x0)
+
+    sample SIR-process over n time instances, where the first time instance is x0
+"""
+function sample_trajectory(P::SIRforward, n_times::Int64, x0)
     X = [x0]
-    n = length(x0)
-    for j in 2:nsteps
-        z = rand(n)
-        push!(X, Pstep(P,X[j-1],z))
+    n_particles = length(x0)
+    for j in 2:n_times
+        z = rand(n_particles)
+        push!(X, sample(P, X[j-1], z))
     end
     X
 end
+
+########################
 
 """
 one step transition prob for P
