@@ -24,6 +24,7 @@ else
 end
 
 include("funcdefs.jl")
+include("backward.jl")
 
 figdir = mkpath(joinpath(wd,"figs"))
 
@@ -99,14 +100,20 @@ pobs = heatmap(obs2matrix(Xobs)', xlabel="time", ylabel="individual",
 colorbar=true, color=observationpalette, dps=600, title="observed", background_color_subplot=white)
 
 
+P = SIRguided(1.0,.3, 2.0, 0.8, Ptrue.τ, Ptrue.𝒩) # initialisation
+
+exp_neighb(P,ave_ninf) = (λ=ave_ninf*P.λ, μ=P.μ, ν=P.ν)
+infected_neighbours = count_infections(Xobs, 𝒩)
+B = backward(P, 𝒪, infected_neighbours)
+    
+Π = [[0.3, 0.4, 0.3] for _ in 1:n_particles]
+Z = [rand(n_particles) for _ in 1:n_times]
+
+Xᵒ, ll  = forward(P, Π, B, Z)
+@show ll
+plot(heatmap(obs2matrix(Xtrue)'), heatmap(obs2matrix(Xᵒ)'))
 
 
-
-
-
-
-
-P = SIRguided(.3, 2.0, 0.8, Ptrue.τ, Ptrue.𝒩) # initialisation
 
 ITER = 10_000
 BI = div(ITER,2)

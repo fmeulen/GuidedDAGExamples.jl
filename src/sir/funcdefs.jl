@@ -85,7 +85,7 @@ function sample𝒳(x, u::Float64,p) # provide current state
     end
 end
 
-pS(x) = @SVector [ξ*exp(-x), 1.0-ξ*exp(-x), 0.0]  # λ*τ
+pS(x) = @SVector [exp(-x), 1.0-exp(-x), 0.0]  # λ*τ
 pI(x) = @SVector [0.0, exp(-x), 1.0-exp(-x)]      # μ*τ
 pR(x) = @SVector [1.0-exp(-x), 0.0, exp(-x)]     # ν*τ
 
@@ -93,9 +93,17 @@ pR(x) = @SVector [1.0-exp(-x), 0.0, exp(-x)]     # ν*τ
 """
     nr_infected_neighb(x,𝒩,i)
 
-Computes number of infected neighbours for the i-th individual in configuration x
+    Computes number of infected neighbours for the i-th individual in configuration x (at a particular time)
+    If x[i] !== _S_ then it is set to zero (because not needed)
+
+    𝒩 = set_neighbours(8)
+    X = [_S_, _I_, _S_, _I_, _R_, _S_, _I_, _I_]
+    for i in 1:8
+        @show  nr_infected_neighb(X, 𝒩, i)
+    end
+
 """
-nr_infected_neighb(x,𝒩,i) = x[i] == _S_ ? sum(x[𝒩[i]].==_I_) : 0
+nr_infected_neighb(x, 𝒩, i) = x[i] == _S_ ? sum(x[𝒩[i]].==_I_) : 0
 
 function κ(P::SIRforward, i, x) # used to be called pi
     if x[i] == _S_
@@ -137,79 +145,9 @@ function sample_trajectory(P::SIRforward, n_times::Int64, x0)
     X
 end
 
-########################
 
-"""
-one step transition prob for P
-"""
-function logP(P::MarkovProcess, x,y)
-    out = 0.0
-    for i in eachindex(x)
-        iy = ind(y[i])
-        if x[i]==_S_
-            ni = nr_infected_neighb(x,P.𝒩,i)
-            out += log(pS(P.λ * ni * P.τ)[iy])
-        elseif x[i]==_I_
-            out+= log(pI(P.μ * P.τ)[iy])
-        elseif x[i]==_R_
-            out+= log(pR(P.ν * P.τ)[iy])
-        end
-    end
-    out
-end
 
-exp_neighb(P,ave_ninf) = (λ=ave_ninf*P.λ, μ=P.μ, ν=P.ν)
 
-obs2matrix(X) =  [ind(X[j][i]) for j in eachindex(X), i in eachindex(X[1])]
-
-################ simulating guided proposal ####################################
-
-"""
-    Q̃(θ,ninfected,τ)
-
-Make Q̃ matrix with parameter θ which is assumed a named tuple with elements λ, μ and ν;
-ninfected is the number of infected neighbours, τ is the time-discretisation step
-"""
-
-Q̃(θ,ninfected,τ) = hcat(pS(θ.λ * τ * ninfected), pI(θ.μ*τ), pR(θ.ν*τ))'
-
-"""
-    Qᵒstep(P::SIRguided,i,x,zi, q̃)
-
-Returns state at time j for individual i as well as its log-weight
-"""
-function Qstep(P::SIRguided,i,x,zi, q̃)
-    out =_R_; p = 0.0
-    if x[i]==_S_
-        ni = nr_infected_neighb(x, P.𝒩, i)
-        p = pS(P.λ * ni * P.τ) .* q̃
-    elseif x[i]==_I_
-        p = pI(P.μ * P.τ) .* q̃
-    elseif x[i]==_R_
-        p = pR(P.ν * P.τ) .* q̃
-    end
-    out = sample𝒳(x[i], zi, p/sum(p))
-    out, log(sum(p))
-end
-
-"""
-    Pstep(x,θ,𝒩,xend,τ,θ̃,j,J)
-
-step from time j-1 to j, all individuals
-"""
-function Pstep(P::SIRguided,x,z,Qseg,xend) # Qseg contains all matrices for that segment
-    xᵒ = State[]
-    logw = 0.0
-    for i in eachindex(x)
-        Q̃mat = Qseg[i]   #      #Q̃Jj = Q̃(θ̃,τ)^(J-j)      Q̃Jj = prod([Q̃((λ=Pᵒ.λ*Nj[k][i], μ=Pᵒ.μ, ν=Pᵒ.ν),Pᵒ.τ) for k in (j+1):J])
-        i_endstate = ind(xend[i])
-        xnext, w = Qstep(P,i,x,z[i],Q̃mat[:,i_endstate])
-        push!(xᵒ, xnext)
-        logw += w
-        logw -= log(Q̃mat[ind(xnext), i_endstate])
-    end
-    xᵒ, logw
-end
 
 """
     h̃!(Q,θ,N,τ)
@@ -221,31 +159,25 @@ Q: (to be initialised with identitiy matrix at each time-instance, for each indi
 τ: time-discretisation step
 N: number of infected neighbours at each time-instance, for each individual
 """
-function h̃!(Q,θ,N,τ)
-    nseg = length(N)
-    J = length(N[1])
-    n = length(N[1][1]) # nr of individuals
-    for k in 1:nseg
-        for i in 1:n
-            Q[k][J][i] = SMatrix{3,3}(1.0I)
-            for j in J-1:-1:1
-                Q[k][j][i] = Q[k][j+1][i] * Q̃(θ,N[k][j][i],τ)
-            end
-        end
-    end
-end
+# function h̃!(Q,θ,N,τ)
+#     nseg = length(N)
+#     J = length(N[1])
+#     n = length(N[1][1]) # nr of individuals
+#     for k in 1:nseg
+#         for i in 1:n
+#             Q[k][J][i] = SMatrix{3,3}(1.0I)
+#             for j in J-1:-1:1
+#                 Q[k][j][i] = Q[k][j+1][i] * Q̃(θ,N[k][j][i],τ)
+#             end
+#         end
+#     end
+# end
 
-function sample_segment!(P::SIRguided, Xᵒ, xstart, xend, Zseg, Qseg, J)
-    Xᵒ[1] = xstart
-    logLR = 0.0
-    for j in 2:J
-        xᵒ, logwj = Pstep(P, Xᵒ[j-1], Zseg[j-1], Qseg[j], xend)
-        Xᵒ[j] = xᵒ
-        logLR += logwj
-    end
-    logLR += logP(P, Xᵒ[J-1], Xᵒ[J])
-    Xᵒ, logLR
-end
+
+
+
+obs2matrix(X) =  [ind(X[j][i]) for j in eachindex(X), i in eachindex(X[1])]
+
 
 function updatepars!(P, Pᵒ ,X ,Xᵒ ,lr ,lrᵒ, Xobs, Z, Q ,propσ, prior, accpar, it, skip_print)
     nseg = length(Xobs)-1
