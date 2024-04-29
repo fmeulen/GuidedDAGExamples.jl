@@ -17,6 +17,7 @@ struct SIRguided <: MarkovProcess
     ν::Float64
     τ::Float64
     𝒩::Array{Array{Int64,1},1}
+    ℐ::Array{Array{Int64,1},1}  # vector with each element a vector at that time of nr of infected neighbours
 end
 
 @enum State::UInt8 _S_=1 _I_=2 _R_=3 _L_=0 
@@ -55,19 +56,30 @@ end
 
 Returns an array of length n, where the i-th element contains the indices for the neighbours of individual i
 """
-function set_neighbours(n)
-    if n<5
+function set_neighbours(n, k)
+    if k==2
+        if n<5
         @error "provide larger value for n"
+        end
+        𝒩 = Vector{Vector{Int64}}(undef,n)
+        𝒩[1] = [2,3]; 𝒩[2] = [1,3,4]; 𝒩[n-1]  = [n, n-2, n-3]; 𝒩[n] = [n-1,n-2]
+        for i in 3:n-2
+            𝒩[i] = [i-2,i-1,i+1,i+2]
+        end
     end
-    𝒩 = Vector{Vector{Int64}}(undef,n)
-    𝒩[1] = [2,3]; 𝒩[2] = [1,3,4]; 𝒩[n-1]  = [n, n-2, n-3]; 𝒩[n] = [n-1,n-2]
-    for i in 3:n-2
-        𝒩[i] = [i-2,i-1,i+1,i+2]
+    if k==1
+        𝒩 = Vector{Vector{Int64}}(undef,n)
+        𝒩[1] = [2]; 𝒩[n] =[n-1]
+        for i in 2:n-1
+            𝒩[i] = [i-1, i+1]
+        end
     end
     𝒩
 end
 
 #### forward sampling #####
+rand𝒳(z, p)= z < p[1] ? _S_ : ( z > 1-p[3] ? _R_ : _I_ )
+
 """
     sample𝒳(x,z,p)
 
@@ -90,20 +102,6 @@ pI(x) = @SVector [0.0, exp(-x), 1.0-exp(-x)]      # μ*τ
 pR(x) = @SVector [1.0-exp(-x), 0.0, exp(-x)]     # ν*τ
 
 
-"""
-    nr_infected_neighb(x,𝒩,i)
-
-    Computes number of infected neighbours for the i-th individual in configuration x (at a particular time)
-    If x[i] !== _S_ then it is set to zero (because not needed)
-
-    𝒩 = set_neighbours(8)
-    X = [_S_, _I_, _S_, _I_, _R_, _S_, _I_, _I_]
-    for i in 1:8
-        @show  nr_infected_neighb(X, 𝒩, i)
-    end
-
-"""
-nr_infected_neighb(x, 𝒩, i) = x[i] == _S_ ? sum(x[𝒩[i]].==_I_) : 0
 
 function κ(P::SIRforward, i, x) # used to be called pi
     if x[i] == _S_
@@ -147,31 +145,6 @@ end
 
 
 
-
-
-"""
-    h̃!(Q,θ,N,τ)
-
-Compute all Q̃ matrices.
-
-Q: (to be initialised with identitiy matrix at each time-instance, for each individual)
-θ: parameter
-τ: time-discretisation step
-N: number of infected neighbours at each time-instance, for each individual
-"""
-# function h̃!(Q,θ,N,τ)
-#     nseg = length(N)
-#     J = length(N[1])
-#     n = length(N[1][1]) # nr of individuals
-#     for k in 1:nseg
-#         for i in 1:n
-#             Q[k][J][i] = SMatrix{3,3}(1.0I)
-#             for j in J-1:-1:1
-#                 Q[k][j][i] = Q[k][j+1][i] * Q̃(θ,N[k][j][i],τ)
-#             end
-#         end
-#     end
-# end
 
 
 
@@ -226,7 +199,7 @@ function updatepars!(P, Pᵒ ,X ,Xᵒ ,lr ,lrᵒ, Xobs, Z, Q ,propσ, prior, acc
 end
 
 # convention:
-# k indexes segments k ∈ 1...nobs-1
+# k indexes segments k ∈ 1...n_times-1
 # j indexes time on a segment j ∈ 1...J
 # i indexes person i ∈ 1...n
 
@@ -238,22 +211,22 @@ function sir_inference(Xobs, P, J; ρ = 0.99, propσ = 0.1,
 
     θ = params(P)
     θθ = [θ]
-    nobs = length(Xobs)
-    n = length(Xobs[1])
+    n_times = length(Xobs)
+    n_particles = length(Xobs[1])
 
-    X = [ [[_S_ for  i in 1:n] for j in 1:J] for _ in 2:nobs]
+    X = [ [[_S_ for  i in 1:n] for j in 1:J] for _ in 2:n_times]
 
     # ninfected = 2mean(obs2matrix(Xobs).==ind(_I_))
-    # N = [ [[ninfected for  i in 1:n] for j in 1:J] for k in 2:nobs]
+    # N = [ [[ninfected for  i in 1:n] for j in 1:J] for k in 2:n_times]
 
 
-    N = [ [[float.(nr_infected_neighb(Xobs[k],P.𝒩,i)) for  i in 1:n] for j in 1:J] for k in 2:nobs]
-    Q = [ [[SMatrix{3,3}(1.0I) for  i in 1:n] for j in 1:J] for _ in 2:nobs]
+    N = [ [[float.(nr_infected_neighb(Xobs[k],P.𝒩,i)) for  i in 1:n] for j in 1:J] for k in 2:n_times]
+    Q = [ [[SMatrix{3,3}(1.0I) for  i in 1:n] for j in 1:J] for _ in 2:n_times]
     h̃!(Q,θ,N,P.τ)
 
-    lr = zeros(nobs-1)
-    Z = [[rand(n) for _ in 1:J-1] for _ in 1:nobs]
-    for k in 2:nobs
+    lr = zeros(n_times-1)
+    Z = [[rand(n) for _ in 1:J-1] for _ in 1:n_times]
+    for k in 2:n_times
         _, lr[k-1] = sample_segment!(P, X[k-1], Xobs[k-1], Xobs[k], Z[k-1], Q[k-1], J)
     end
 
@@ -276,12 +249,12 @@ function sir_inference(Xobs, P, J; ρ = 0.99, propσ = 0.1,
 
         # recompute likelihood under the auxiliary process with updated θ
         h̃!(Q, θ, N, P.τ)
-        for k in 1:nobs-1
+        for k in 1:n_times-1
             X[k], lr[k] = sample_segment!(P, X[k], Xobs[k], Xobs[k+1], Z[k], Q[k],J)
         end
 
         # update innovations Z
-        for k in 1:nobs-1
+        for k in 1:n_times-1
             Znew = [randn(n) for _ in 1:J-1]
             Zᵒ[k] = [mod.(Z[k][j] + (1.0-ρ)*Znew[j], 1) for j in eachindex(Z[1])]
             Xᵒ[k], lrᵒ[k] = sample_segment!(P, Xᵒ[k], Xobs[k], Xobs[k+1], Zᵒ[k], Q[k], J)
@@ -301,7 +274,7 @@ function sir_inference(Xobs, P, J; ρ = 0.99, propσ = 0.1,
 
         #    update N
         # if adaptmin < it < adaptmax
-        #     for k in 1:nobs-1
+        #     for k in 1:n_times-1
         #         N_ =  [[adaptfrac*ninfected + (1-adaptfrac)*nr_infected_neighb(X[k][j], P.𝒩, i) for  i in 1:n] for j in 1:J]
         #         N[k] = N_/it + (it/(it+1))*  N[k]
         #     end
@@ -309,8 +282,8 @@ function sir_inference(Xobs, P, J; ρ = 0.99, propσ = 0.1,
         # end
         if it < adaptmax
 
-                N_ = [  [[float.(nr_infected_neighb(X[k][j], P.𝒩, i)) for  i in 1:n] for j in 1:J] for k in 1:nobs-1]
-                #N = [ [[float.(nr_infected_neighb(Xobs[k],P.𝒩,i)) for  i in 1:n] for j in 1:J] for k in 2:nobs]
+                N_ = [  [[float.(nr_infected_neighb(X[k][j], P.𝒩, i)) for  i in 1:n] for j in 1:J] for k in 1:n_times-1]
+                #N = [ [[float.(nr_infected_neighb(Xobs[k],P.𝒩,i)) for  i in 1:n] for j in 1:J] for k in 2:n_times]
                 N .= γ * N + (1-γ) * N_
 
             h̃!(Q,θ,N,P.τ)
@@ -321,5 +294,5 @@ function sir_inference(Xobs, P, J; ρ = 0.99, propσ = 0.1,
         end
 #        println(Xmid)
     end
-    θθ, X, N, Q, Xinit, Xmid, sum(acc)/(nobs*ITER), sum.(accpar)/ITER, difflr
+    θθ, X, N, Q, Xinit, Xmid, sum(acc)/(n_times*ITER), sum.(accpar)/ITER, difflr
 end
