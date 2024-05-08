@@ -1,16 +1,14 @@
 innovations(n_times, n_particles) = [rand(n_particles) for _ in 1:n_times]
 
-function update(Z, δ, block)
+function update!(Zᵒ, Z, δ, block)
     n_particles = length(Z[1])
+    n_times = length(Z)
     ℒ = Uniform(-δ, δ)
-    Zᵒ = deepcopy(Z)
-    for t ∈ block
-        for i in 1:n_particles
-            Zᵒ[t][i] = mod(Z[t][i] + rand(ℒ), 1)
+    for i in 1:n_particles
+        for t ∈ 1:n_times         
+            Zᵒ[t][i] = t ∈ block ? mod(Z[t][i] + rand(ℒ), 1) : Z[t][i]
         end
     end
-#        Zᵒ[block] = [mod.(Z[t] + rand(ℒ, n_particles), 1) for t in block  ]
-    Zᵒ
 end
 
 
@@ -26,13 +24,14 @@ function mcmc(𝒪, P::SIRguided, Π;  δ = 0.1, γ = 0.7, acc = 0, n_blocks = 4
     ℱ = forward(P, Π, B)
 
     Z = innovations(n_times, n_particles)
+    Zᵒ = deepcopy(Z)
     X, ll  = ℱ(Z)
 
     XX = [copy(X)]
     lls = [ll]
     for i in 1:ITER
         for block in blocks
-            Zᵒ = update(Z, δ, block)
+            update!(Zᵒ, Z, δ, block)
             Xᵒ, llᵒ  = ℱ(Zᵒ)
               
             if log(rand()) < llᵒ - ll
