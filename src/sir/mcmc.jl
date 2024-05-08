@@ -3,8 +3,13 @@ innovations(n_times, n_particles) = [rand(n_particles) for _ in 1:n_times]
 function update(Z, δ, block)
     n_particles = length(Z[1])
     ℒ = Uniform(-δ, δ)
-    Zᵒ = copy(Z)
-    Zᵒ[block] = [mod.(Z[t] + rand(ℒ, n_particles), 1) for t in block  ]
+    Zᵒ = deepcopy(Z)
+    for t ∈ block
+        for i in 1:n_particles
+            Zᵒ[t][i] = mod(Z[t][i] + rand(ℒ), 1)
+        end
+    end
+#        Zᵒ[block] = [mod.(Z[t] + rand(ℒ, n_particles), 1) for t in block  ]
     Zᵒ
 end
 
@@ -17,32 +22,38 @@ function mcmc(𝒪, P::SIRguided, Π;  δ = 0.1, γ = 0.7, acc = 0, n_blocks = 4
 
     # Xobs = [O.x for O in 𝒪]
     # infected_neighbours = count_infections(Xobs, P.𝒩)
+    B = backward(P, 𝒪)
+    ℱ = forward(P, Π, B)
 
     Z = innovations(n_times, n_particles)
-    B = backward(P, 𝒪)
-    X, ll  = forward(P, Π, B, Z)
+    X, ll  = ℱ(Z)
 
-    Xs = [X]
+    XX = [copy(X)]
     lls = [ll]
     for i in 1:ITER
         for block in blocks
             Zᵒ = update(Z, δ, block)
-            Xᵒ, llᵒ  = forward(P, Π, B, Zᵒ)
-            @show ll, llᵒ
+            Xᵒ, llᵒ  = ℱ(Zᵒ)
+              
             if log(rand()) < llᵒ - ll
+                i÷10==0 && println(ll,"  ", llᵒ,"  ", llᵒ-ll, "  accepted")
                 ll = llᵒ
-                for k in eachindex(Z)
-                    Z[k] .= Zᵒ[k]
+
+                #Z .= Zᵒ
+                for t ∈ 1:n_times
+                    for i in 1:n_particles
+                        Z[t][i] = Zᵒ[t][i] 
+                    end
                 end
-#                Zᵒ, Z = Z, Zᵒ
-                Xᵒ, X = X, Xᵒ
-                #Zᵒ .= Z
-                #Xᵒ .= X
-            #    println("acc")
+
+                X .= Xᵒ
+                
                 acc += 1
+            else 
+                i÷10==0 && println(ll,"  ", llᵒ,"  ", llᵒ-ll, "  rejected")
             end
-            push!(Xs, copy(X))
-            push!(lls, copy(ll))
+            push!(XX, deepcopy(X))
+            push!(lls, ll)
         end
         if i < 1#adaptmax
             infected_neighbours_new = count_infections(X, 𝒩)
@@ -52,5 +63,5 @@ function mcmc(𝒪, P::SIRguided, Π;  δ = 0.1, γ = 0.7, acc = 0, n_blocks = 4
         end
     end
     @show acc/(ITER*n_blocks)
-    Xs, lls
+    XX, lls
 end

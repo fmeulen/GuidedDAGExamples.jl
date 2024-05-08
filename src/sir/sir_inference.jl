@@ -36,14 +36,15 @@ include("partition.jl")
 figdir = mkpath(joinpath(wd,"figs"))
 
 ############## generate data
-Random.seed!(3)
+#Random.seed!(30)
 
-n_particles = 12
-n_times = 10
-𝒩 = set_neighbours(n_particles, 1)
-ξ, λ, μ, ν, τ =  1.0, 1.5, 2.0, 3.1, 0.1
+n_particles = 20
+n_times = 6
+𝒩 = set_neighbours(n_particles, 2)
+ξ, λ, μ, ν, τ =  1.0, 3.5, 2.0, 3.1, 0.1
 Ptrue = SIRforward(ξ, λ, μ, ν, τ, 𝒩)
 #x0 = vcat(_I_, fill(_S_,n-2),_I_)
+x0 = [_I_, _S_, _S_, _S_, _S_]
 x0 = vcat(fill(_S_,3), [_I_], fill(_S_,7), [_I_], fill(_S_,n_particles-12))
 
 Xtrue = sample_trajectory(Ptrue::SIRforward, n_times, x0)
@@ -69,7 +70,7 @@ function plotpath(X; name="path")
     colorbar=true, color=observationpalette, dps=600, title=name, background_color_subplot=white)
     return p
 end
-samplesize = 20
+samplesize = (n_times * n_particles)÷2
 𝒪 = create_data(samplesize, n_times, n_particles, O)
 
 Xobs = [O.x for O in 𝒪]
@@ -102,11 +103,14 @@ Xobs = [O.x for O in 𝒪]
 P = SIRguided(Ptrue.ξ, Ptrue.λ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ)
 
 #exp_neighb(P,ave_ninf) = (λ=ave_ninf*P.λ, μ=P.μ, ν=P.ν)
-
+Xobs_flat = vcat(Xobs...)
+frac_infected_observed = sum(Xobs_flat .== _I_)/(length(Xobs_flat) - sum(Xobs_flat .== _L_))
+ℐ = [fill(frac_infected_observed, n_particles) for _ ∈ 1:n_times]
+P = SIRguided(Ptrue.ξ, Ptrue.λ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ)
 
 B = backward(P, 𝒪)
     
-Π = [[0.99, 0.02, 0.0] for _ in 1:n_particles]
+Π = [SA_F64[0.8, 0.2, 0.0] for _ in 1:n_particles]
 
 
 Z = innovations(n_times, n_particles)
@@ -118,17 +122,25 @@ ptrue = plotpath(Xtrue; name="true")
 pobs = plotpath(Xobs; name="observed")
 pguided = plotpath(X; name="guided")
 plot(ptrue, pobs, pguided, layout=lo)
+@show ll
+
+Zᵒ = update(Z, 0.3, 1:4);
+Xᵒ, llᵒ  = forward(P, Π, B, Zᵒ);
+@show ll, llᵒ, llᵒ-ll
 
 
-Xs, lls = mcmc(𝒪, P, Π; δ=0.1, ITER=1000)
+###################
+Xs, lls = mcmc(𝒪, P, Π; δ=0.1, ITER=10_000, n_blocks=1);
 plot(lls)
 
-# anim = @animate for x in Xs
-#     plotpath(x)
-# end
+ anim = @animate for x in Xs
+     plotpath(x)
+ end
+ gif(anim, "anim.gif", fps=1)
 pforward
 
-plotpath(Xs[end])
+
+plot(ptrue, plotpath(Xs[end]))
 
 
 ITER = 10_000

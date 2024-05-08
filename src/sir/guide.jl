@@ -6,9 +6,8 @@
     
     returns new state and logweight 
 """
-function guide(x, P::SIRguided, h, z, infected)
+function guide!(x, P::SIRguided, h, z, infected)
     @assert length(x)==length(h)==length(z)
-    y = similar(x)
     logweight = 0.0 
     for i ∈ eachindex(x)
         if x[i]==_S_
@@ -22,11 +21,10 @@ function guide(x, P::SIRguided, h, z, infected)
             p = pI(P.μ * P.τ) .* h[i]
         elseif x[i]==_R_
             p = pR(P.ν * P.τ) .* h[i]
-            p̃ = p
         end
-        y[i] = rand𝒳(z[i], p) #sample𝒳(x[i], z[i], p/sum(p))
+        x[i] = rand𝒳(z[i], p/sum(p)) 
     end
-    y, logweight
+    logweight
 end
 
 
@@ -56,13 +54,14 @@ function forward(P::SIRguided, Π, B, Z)
     end
     
 
-    Xs = [X]
+    Xs = [deepcopy(X)]
     for t in 2:n_steps
-        Xnext, lw = guide(X, P, B[t], Z[t], P.ℐ[t-1])
-        X = Xnext
+        lw = guide!(X, P, B[t], Z[t], P.ℐ[t-1])
         ll += lw
-        push!(Xs, copy(X))
+        push!(Xs, deepcopy(X))
     end
     Xs, ll
 end
+
+forward(P, Π, B) = (Z) -> forward(P, Π, B, Z)
 

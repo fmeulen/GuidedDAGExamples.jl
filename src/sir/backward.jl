@@ -1,26 +1,33 @@
-
-
 ######################## backward filtering #########################
 # h is a vector of Svectors of length 3
 # 
-function fuse(O::Observation, h)
+function fuse!(O::Observation, h)
     id = O.ind
+    println(id)
     for i in eachindex(id)
         k = id[i]  # this is an index in h that needs to be updated because we observe it
         h[k] = O.h[i] .* h[k]
     end
-    h
 end
 
 # back kernel for one individual
-κ̃(P::SIRguided ,ninfected) = hcat(pS(P.λ * P.τ * ninfected), pI(P.μ*P.τ), pR(P.ν*P.τ))'
+κ̃(P::SIRguided ,ninfected::Number) = hcat(pS(P.λ * P.τ * ninfected), pI(P.μ*P.τ), pR(P.ν*P.τ))'
 
 """
     h hfun at time t+1
     n vector of infected individuals at time t
 """
-pullback(h, ninfected, P::SIRguided) = [κ̃(P, ninfected[i]) * h[i] for i ∈ eachindex(h)]
+function pullback!(h, ninfected, P::SIRguided) 
+    for i in eachindex(h)    
+        h[i] = κ̃(P, ninfected[i]) * h[i]
+    end
+end
 
+function normalize!(h)    
+    for i in eachindex(h)
+        h[i] = h[i]/sum(h[i])
+    end
+end
 
 """
     nr_infected_neighb(x,𝒩,i)
@@ -37,6 +44,13 @@ pullback(h, ninfected, P::SIRguided) = [κ̃(P, ninfected[i]) * h[i] for i ∈ e
 """
 nr_infected_neighb(x, 𝒩, i) = x[i] == _S_ ? sum(x[𝒩[i]].==_I_) : 0
 
+"""
+count_infections_at_t(x, 𝒩)
+
+    count at one time instance for one particle
+"""
+count_infections_at_t(x, 𝒩) =[nr_infected_neighb(x, 𝒩, i) for i in eachindex(x)]  
+
 
 """ count_infections(XX, 𝒩)
 
@@ -51,22 +65,26 @@ nr_infected_neighb(x, 𝒩, i) = x[i] == _S_ ? sum(x[𝒩[i]].==_I_) : 0
     XX = [X1, X2]
     count_infections(XX, 𝒩)
 """
-count_infections_at_t(x, 𝒩) =[nr_infected_neighb(x, 𝒩, i) for i in eachindex(x)]
-
 count_infections(X, 𝒩) = [count_infections_at_t(x, 𝒩)  for x ∈ X]
+
+
+
 
 
 function backward(P::SIRguided, 𝒪)
     n_times = length(𝒪)
     n_particles = length(𝒪[1].x)
     
-    h_ = [SA_F64[1, 1, 1]  for _ in 1:n_particles]
-    h = fuse(𝒪[n_times], h_)
+    h = [SA_F64[1, 1, 1]  for _ in 1:n_particles]
+    fuse!(𝒪[n_times], h)
     hs = [copy(h)]
     for t in n_times-1:-1:1
-        h_ = pullback(h, P.ℐ[t], P)
-        h = fuse(𝒪[t], h_)
+        pullback!(h, P.ℐ[t], P)
+        
+        fuse!(𝒪[t], h)
+        normalize!(h)
         pushfirst!(hs, copy(h))
     end
     hs
 end
+

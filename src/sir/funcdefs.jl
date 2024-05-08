@@ -10,14 +10,14 @@ struct SIRforward <: MarkovProcess
         𝒩::Array{Array{Int64,1},1}
 end
 
-struct SIRguided <: MarkovProcess
+struct SIRguided{T} <: MarkovProcess
     ξ::Float64
     λ::Float64
     μ::Float64
     ν::Float64
     τ::Float64
     𝒩::Array{Array{Int64,1},1}
-    ℐ::Array{Array{Int64,1},1}  # vector with each element a vector at that time of nr of infected neighbours
+    ℐ::Array{Array{T,1},1}  # vector with each element a vector at that time of nr of infected neighbours
 end
 
 @enum State::UInt8 _S_=1 _I_=2 _R_=3 _L_=0 
