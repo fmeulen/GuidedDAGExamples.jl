@@ -11,6 +11,9 @@ using StaticArrays
 #using Revise
 using ConcreteStructs
 using StatsBase
+using UnPack
+using Accessors
+using BenchmarkTools
 
 if PLOT
     using RCall
@@ -28,74 +31,56 @@ end
 include("createdata.jl")
 include("funcdefs.jl")
 include("backward.jl")
-
-include("guide.jl")
+include("forward.jl")
 include("mcmc.jl")
 include("partition.jl")
+
+include("plotting.jl")
 
 figdir = mkpath(joinpath(wd,"figs"))
 
 ############## generate data
 #Random.seed!(30)
 
-n_particles = 20
-n_times = 6
+n_particles = 10
+n_times = 50
+samplesize = (n_times * n_particles)÷8
+
+# set neighbourhood structure
 𝒩 = set_neighbours(n_particles, 2)
+
+# set true pars
 ξ, λ, μ, ν, τ =  1.0, 3.5, 2.0, 3.1, 0.1
 Ptrue = SIRforward(ξ, λ, μ, ν, τ, 𝒩)
-#x0 = vcat(_I_, fill(_S_,n-2),_I_)
-x0 = [_I_, _S_, _S_, _S_, _S_]
-x0 = vcat(fill(_S_,3), [_I_], fill(_S_,7), [_I_], fill(_S_,n_particles-12))
+
+# set initial state
+x0 = vcat(_I_, fill(_S_,n_particles-2),_I_)
+#x0 = [_I_, _S_, _S_, _S_, _S_]
+#x0 =  vcat(fill(_S_,3), [_I_], fill(_S_,7), [_I_], fill(_S_,n_particles-12))
 
 Xtrue = sample_trajectory(Ptrue::SIRforward, n_times, x0)
 # visualise
-pforward = Plots.heatmap(obs2matrix(Xtrue)' ,xlabel="time", ylabel="individual", title="Forward simulated")
+pforward = plotpath(Xtrue; name="forward")
 PLOT && pforward
 
+# set observation scheme
 δobs = 0.001
 O = SA[1.0-δobs δobs/2.0 δobs/2.0; δobs/2.0 1.0- δobs δobs/2.0; δobs/2.0 δobs/2.0 1-δobs]
 
-function plotpath(X; name="path") 
-    n_particles = length(X[1])
-    Xc = copy(X)
-    push!(Xc, vcat([_S_, _I_, _R_], fill(_L_, n_particles-3)))
-    # construct observation ColorPalette
-    defaultpalette = palette(cgrad(:default, categorical=true), 3)
-    # white = RGBA{Float64}(255, 255, 255)
-    # white = RGBA{Float64}(16, 59, 223, 0.12)
-    white = RGBA(52, 162, 231, 0.23)
-    observationcolors = vec(hcat(white, defaultpalette.colors.colors...))
-    observationpalette = ColorPalette(typeof(defaultpalette.colors)(observationcolors, "", ""))
-    p = heatmap(obs2matrix(Xc)', xlabel="time", ylabel="individual", 
-    colorbar=true, color=observationpalette, dps=600, title=name, background_color_subplot=white)
-    return p
-end
-samplesize = (n_times * n_particles)÷2
+
 𝒪 = create_data(samplesize, n_times, n_particles, O)
 
-Xobs = [O.x for O in 𝒪]
+
 
 # visualise
-
-# construct observation ColorPalette
-defaultpalette = palette(cgrad(:default, categorical=true), 3)
-# white = RGBA{Float64}(255, 255, 255)
-# white = RGBA{Float64}(16, 59, 223, 0.12)
-white = RGBA(52, 162, 231, 0.23)
-
-observationcolors = vec(hcat(white, defaultpalette.colors.colors...))
-observationpalette = ColorPalette(typeof(defaultpalette.colors)(observationcolors, "", ""))
-
-
-pobs = heatmap(obs2matrix(Xobs)', xlabel="time", ylabel="individual", 
-colorbar=true, color=observationpalette, dps=600, title="observed", background_color_subplot=white)
+Xobs = [O.x for O in 𝒪]
+pobs = plotpath(Xobs)
 
 lo = @layout [a;b]
 plot(pforward, pobs, layout=lo)
 
 ###############################################################
 
-#P = SIRguided(1.0,.3, 2.0, 0.8, Ptrue.τ, Ptrue.𝒩) # initialisation
 
 # construct guided process from 𝒪 and 𝒩
 Xobs = [O.x for O in 𝒪]
@@ -104,52 +89,76 @@ P = SIRguided(Ptrue.ξ, Ptrue.λ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ
 
 #exp_neighb(P,ave_ninf) = (λ=ave_ninf*P.λ, μ=P.μ, ν=P.ν)
 Xobs_flat = vcat(Xobs...)
+
+# set guided process
 frac_infected_observed = sum(Xobs_flat .== _I_)/(length(Xobs_flat) - sum(Xobs_flat .== _L_))
 ℐ = [fill(frac_infected_observed, n_particles) for _ ∈ 1:n_times]
-P = SIRguided(Ptrue.ξ, Ptrue.λ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ)
+P = SIRguided(Ptrue.ξ, Ptrue.λ ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ)
 
-B = backward(P, 𝒪)
-    
-Π = [SA_F64[0.8, 0.2, 0.0] for _ in 1:n_particles]
+B, logw = backward(P, 𝒪)
 
+# set prior
+Π = [SA_F64[0.9, 0.1, 0.0] for _ in 1:n_particles]
 
 Z = innovations(n_times, n_particles)
-X, ll  = forward(P, Π, B, Z)
+X, ll  = forward(P, Π, B, Z, logw);
 @show ll
+
+Y = copy(X);
+ll = forward!(Y, P, Π, B, Z, logw);
+@show ll
+
+t=2
+@btime guide!(Y[t], P, B[t], Z[t], P.ℐ[t-1])
 
 lo = @layout [a;b;c]
 ptrue = plotpath(Xtrue; name="true")
 pobs = plotpath(Xobs; name="observed")
 pguided = plotpath(X; name="guided")
+println(ll)
 plot(ptrue, pobs, pguided, layout=lo)
 @show ll
 
-Zᵒ = update(Z, 0.3, 1:4);
-Xᵒ, llᵒ  = forward(P, Π, B, Zᵒ);
+Zᵒ = deepcopy(Z)
+update!(Zᵒ,    Z, 0.3, 1:4);
+Xᵒ, llᵒ  = forward(P, Π, B, Zᵒ, logw);
 @show ll, llᵒ, llᵒ-ll
 
 
 ###################
-Xs, lls = mcmc(𝒪, P, Π; δ=0.1, ITER=10_000, n_blocks=1);
-plot(lls)
+P = SIRguided(Ptrue.ξ, Ptrue.λ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ)
+P = SIRguided(Ptrue.ξ, Ptrue.λ, .2, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ)
 
- anim = @animate for x in Xs
-     plotpath(x)
+n_blocks= 4
+blocks = make_partition(n_times, n_blocks)
+#blocks =[ 1:1]
+
+Xs, lls, θs = mcmc(𝒪, P, Π, blocks; δ=0.1, ITER=10_000);
+lo = @layout [a;b]
+λs = getindex.(θs,1);
+μs = getindex.(θs,2);
+plot(plot(lls), plot(μs), layout=lo)
+mean(λs); mean(μs)
+
+lo = @layout  [a;b;c]
+plot(plotpath(Xtrue;name="true"),
+plotpath(Xs[end]; name="guided"),
+plotpath(Xobs;name="observed"),
+layout=lo, size=(700,700))
+
+
+L = length(Xs)
+ anim = @animate for i in eachindex(Xs)
+     plot(plotpath(Xtrue;name="true"),
+          plotpath(Xs[i]; name="$i of $L"),
+          plotpath(Xobs;name="observed"),
+          layout=lo)
  end
- gif(anim, "anim.gif", fps=1)
-pforward
+
+ gif(anim, "anim.gif", fps=5)
 
 
-plot(ptrue, plotpath(Xs[end]))
-
-
-ITER = 10_000
-BI = div(ITER,2)
-#prior =(Uniform(0,20.0),Uniform(0,20.0),Uniform(0,20.0))
 prior = (Exponential(5.0), Exponential(5.0), Exponential(1.0))
-@time θθ, Xfinal, N, Q, Xinit, Xmid, acc, accpar, difflr =
-    sir_inference(Xobs, P, J; ρ=0.99, prior=prior,
-                        ITER=ITER, γ =0.7,  propσ = 0.05)
 
 
 println()

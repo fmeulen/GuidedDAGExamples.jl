@@ -20,6 +20,8 @@ struct SIRguided{T} <: MarkovProcess
     ℐ::Array{Array{T,1},1}  # vector with each element a vector at that time of nr of infected neighbours
 end
 
+param(P::SIRguided) = [P.λ, P.μ, P.ν]
+
 @enum State::UInt8 _S_=1 _I_=2 _R_=3 _L_=0 
 const 𝒳 = @SVector [_S_,_I_,_R_]
 
@@ -79,7 +81,15 @@ end
 
 #### forward sampling #####
 rand𝒳(z, p)= z < p[1] ? _S_ : ( z > 1-p[3] ? _R_ : _I_ )
-
+function rand𝒳!(x::State, z, p)
+    if z < p[1] 
+        x= _S_ 
+    elseif z > 1-p[3] 
+        x=  _R_ 
+    else 
+        x= _I_ 
+    end
+end
 """
     sample𝒳(x,z,p)
 
@@ -152,51 +162,6 @@ end
 obs2matrix(X) =  [ind(X[j][i]) for j in eachindex(X), i in eachindex(X[1])]
 
 
-function updatepars!(P, Pᵒ ,X ,Xᵒ ,lr ,lrᵒ, Xobs, Z, Q ,propσ, prior, accpar, it, skip_print)
-    nseg = length(Xobs)-1
-    λᵒ = P.λ * exp(propσ*randn())
-    Pᵒ = SIRguided(λᵒ, P.μ, P.ν, P.τ, P.𝒩)
-    for k in 1:nseg
-        Xᵒ[k], lrᵒ[k] = sample_segment!(Pᵒ, Xᵒ[k], Xobs[k],Xobs[k+1],Z[k],Q[k],J)
-    end
-    if log(rand()) < sum(lrᵒ .- lr)  + (log(Pᵒ.λ) - log(P.λ)) + logpdf(prior[1],λᵒ) - logpdf(prior[1],P.λ)
-        if mod(it, skip_print)==0 println("iteration ", it,  "   diff loglr ", sum(lrᵒ.-lr), "    λ ", λᵒ)  end
-        X, Xᵒ, lr, lrᵒ, P, Pᵒ = Xᵒ, X, lrᵒ, lr, Pᵒ, P
-        accpar[1] += 1
-    else
-        if mod(it, skip_print )==0 println("iteration ", it,  "   diff loglr ", sum(lrᵒ.-lr), "    λ ", P.λ)  end
-    end
-
-    μᵒ = P.μ  * exp(propσ*randn())
-    Pᵒ = SIRguided(P.λ, μᵒ, P.ν, P.τ, P.𝒩)
-    for k in 1:nseg
-        Xᵒ[k], lrᵒ[k] = sample_segment!(Pᵒ, Xᵒ[k], Xobs[k],Xobs[k+1],Z[k],Q[k],J)
-    end
-    if log(rand()) < sum(lrᵒ .- lr)  + (log(Pᵒ.μ) - log(P.μ))+ logpdf(prior[2],μᵒ) - logpdf(prior[2],P.μ)
-        if mod(it, skip_print)==0 println("iteration ", it,  "   diff loglr ", sum(lrᵒ.-lr), "    μ ", μᵒ)  end
-        X, Xᵒ, lr, lrᵒ, P, Pᵒ = Xᵒ, X, lrᵒ, lr, Pᵒ, P
-        accpar[2] += 1
-    else
-        if mod(it, skip_print )==0 println("iteration ", it,  "   diff loglr ", sum(lrᵒ.-lr), "    μ ", P.μ)  end
-    end
-
-    νᵒ = P.ν  * exp(propσ*randn())
-    Pᵒ = SIRguided(P.λ, P.μ, νᵒ, P.τ, P.𝒩)
-    for k in 1:nseg
-        Xᵒ[k], lrᵒ[k] = sample_segment!(Pᵒ, Xᵒ[k], Xobs[k],Xobs[k+1],Z[k],Q[k],J)
-    end
-    if log(rand()) < sum(lrᵒ .- lr)  + (log(Pᵒ.ν) - log(P.ν)) + logpdf(prior[3],νᵒ) - logpdf(prior[3],P.ν)
-        if mod(it, skip_print)==0 println("iteration ", it,  "   diff loglr ", sum(lrᵒ.-lr), "    ν ", νᵒ)  end
-        X, Xᵒ, lr, lrᵒ, P, Pᵒ = Xᵒ, X, lrᵒ, lr, Pᵒ, P
-        accpar[3] += 1
-    else
-        if mod(it, skip_print )==0 println("iteration ", it,  "   diff loglr ", sum(lrᵒ.-lr), "    ν ", P.ν)  end
-    end
-
-
-    return X, Xᵒ, lr, lrᵒ, P, Pᵒ
-
-end
 
 # convention:
 # k indexes segments k ∈ 1...n_times-1

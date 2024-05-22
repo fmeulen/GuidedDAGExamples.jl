@@ -1,11 +1,12 @@
 ######################## backward filtering #########################
+
+
 # h is a vector of Svectors of length 3
 # 
 function fuse!(O::Observation, h)
-    id = O.ind
-    println(id)
-    for i in eachindex(id)
-        k = id[i]  # this is an index in h that needs to be updated because we observe it
+    ids = O.ind
+    for i in eachindex(ids)
+        k = ids[i]  # this is an index in h that needs to be updated because we observe it
         h[k] = O.h[i] .* h[k]
     end
 end
@@ -23,10 +24,14 @@ function pullback!(h, ninfected, P::SIRguided)
     end
 end
 
-function normalize!(h)    
+function normalize!(h)   
+    s = 0.0 
     for i in eachindex(h)
-        h[i] = h[i]/sum(h[i])
+        si = sum(h[i])
+        h[i] = h[i]/si
+        s += log(si)
     end
+    s
 end
 
 """
@@ -74,17 +79,103 @@ count_infections(X, 𝒩) = [count_infections_at_t(x, 𝒩)  for x ∈ X]
 function backward(P::SIRguided, 𝒪)
     n_times = length(𝒪)
     n_particles = length(𝒪[1].x)
-    
-    h = [SA_F64[1, 1, 1]  for _ in 1:n_particles]
+    logw = 0.0
+
+    h = fill(SA_F64[1, 1, 1], n_particles)
     fuse!(𝒪[n_times], h)
     hs = [copy(h)]
     for t in n_times-1:-1:1
         pullback!(h, P.ℐ[t], P)
         
         fuse!(𝒪[t], h)
-        normalize!(h)
+        lw = normalize!(h)
+        logw += lw
         pushfirst!(hs, copy(h))
     end
-    hs
+    hs, logw
 end
 
+
+
+#### all below does not really make the implementation faster
+
+function backward!(B, P::SIRguided, 𝒪)
+    n_times = length(𝒪)
+    n_particles = length(𝒪[1].x)
+    logw = 0.0
+
+    h = [SA_F64[1, 1, 1]  for _ in 1:n_particles]
+    fuse!(𝒪[n_times], h)
+    B[n_times] = copy(h)
+    for t in n_times-1:-1:1
+        pullback!(h, P.ℐ[t], P)
+        
+        fuse!(𝒪[t], h)
+        lw = normalize!(h)
+        logw += lw
+        B[t] = copy(h)
+    end
+    logw
+end
+
+
+
+##########################
+
+function backwardfast(P::SIRguided, 𝒪)
+    n_times = length(𝒪)
+    n_particles = length(𝒪[1].x)
+    logw = 0.0
+
+    h = @SVector fill(SA_F64[1, 1, 1], n_particles)
+    h = fusefast!(𝒪[n_times], h)
+    hs = [copy(h)]
+    for t in n_times-1:-1:1
+        h = pullbackfast!(h, P.ℐ[t], P)
+        
+        h = fusefast!(𝒪[t], h)
+        lw, h = normalizefast!(h)
+        logw += lw
+        pushfirst!(hs, copy(h))
+    end
+    hs, logw
+end
+
+function fusefast!(O::Observation, h)
+    id = O.ind
+    for i in eachindex(id)
+        k = id[i]  # this is an index in h that needs to be updated because we observe it
+        temp = O.h[i] .* h[k]
+        @reset h[k] = temp
+    end
+    h
+end
+
+
+function normalizefast!(h)   
+    s = 0.0 
+    for i in eachindex(h)
+        si = sum(h[i])
+        temp = h[i]/si
+        @reset h[i] = temp
+        s += log(si)
+    end
+    s, h
+end
+
+function pullbackfast!(h, ninfected, P::SIRguided) 
+    for i in eachindex(h)    
+        temp = κ̃(P, ninfected[i]) * h[i]
+        @reset h[i] = temp 
+    end
+    h
+end
+
+# using BenchmarkTools
+# @btime backward(P, 𝒪);
+# @btime backward!(B, P, 𝒪)
+# @btime backwardfast(P, 𝒪); # allocates less, but about 3 times slower
+
+# B, logw = backward(P, 𝒪)
+# logw = backward!(B, P, 𝒪)
+# Bfast, logwfast = backwardfast(P, 𝒪)
