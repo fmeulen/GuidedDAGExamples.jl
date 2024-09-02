@@ -20,7 +20,7 @@ struct SIRguided{T} <: MarkovProcess
     ℐ::Array{Array{T,1},1}  # vector with each element a vector at that time of nr of infected neighbours
 end
 
-param(P::SIRguided) = [P.λ, P.μ, P.ν]
+param(P::SIRguided) = (λ=P.λ, μ=P.μ, ν=P.ν)
 
 @enum State::UInt8 _S_=1 _I_=2 _R_=3 _L_=0 
 const 𝒳 = @SVector [_S_,_I_,_R_]
@@ -106,7 +106,7 @@ function sample𝒳(x, u::Float64,p) # provide current state
     else return x
     end
 end
-
+# pS(x) = SVector(exp(-x), 1.0-exp(-x), 0.0)
 pS(x) = @SVector [exp(-x), 1.0-exp(-x), 0.0]  # λ*τ
 pI(x) = @SVector [0.0, exp(-x), 1.0-exp(-x)]      # μ*τ
 pR(x) = @SVector [1.0-exp(-x), 0.0, exp(-x)]     # ν*τ

@@ -34,7 +34,6 @@ include("backward.jl")
 include("forward.jl")
 include("mcmc.jl")
 include("partition.jl")
-
 include("plotting.jl")
 
 figdir = mkpath(joinpath(wd,"figs"))
@@ -42,9 +41,9 @@ figdir = mkpath(joinpath(wd,"figs"))
 ############## generate data
 #Random.seed!(30)
 
-n_particles = 10
-n_times = 50
-samplesize = (n_times * n_particles)÷8
+n_particles = 30
+n_times = 100
+samplesize = (n_times * n_particles)÷20
 
 # set neighbourhood structure
 𝒩 = set_neighbours(n_particles, 2)
@@ -100,45 +99,63 @@ B, logw = backward(P, 𝒪)
 # set prior
 Π = [SA_F64[0.9, 0.1, 0.0] for _ in 1:n_particles]
 
-Z = innovations(n_times, n_particles)
-X, ll  = forward(P, Π, B, Z, logw);
-@show ll
 
-Y = copy(X);
-ll = forward!(Y, P, Π, B, Z, logw);
-@show ll
+############################################################
+##### this can go later #######
+ Z = innovations(n_times, n_particles)
+ X, ll  = forward(P, Π, B, Z, logw);
+ ll
+logweight(X, Π, B, 𝒪, O)
+# @show ll
 
-t=2
-@btime guide!(Y[t], P, B[t], Z[t], P.ℐ[t-1])
+# Y = copy(X);
+# ll = forward!(Y, P, Π, B, Z, logw);
+# @show ll
 
-lo = @layout [a;b;c]
-ptrue = plotpath(Xtrue; name="true")
-pobs = plotpath(Xobs; name="observed")
-pguided = plotpath(X; name="guided")
-println(ll)
-plot(ptrue, pobs, pguided, layout=lo)
-@show ll
+# t=2
+# @btime guide!(Y[t], P, B[t], Z[t], P.ℐ[t-1])
 
-Zᵒ = deepcopy(Z)
-update!(Zᵒ,    Z, 0.3, 1:4);
-Xᵒ, llᵒ  = forward(P, Π, B, Zᵒ, logw);
-@show ll, llᵒ, llᵒ-ll
+# lo = @layout [a;b;c]
+# ptrue = plotpath(Xtrue; name="true")
+# pobs = plotpath(Xobs; name="observed")
+# pguided = plotpath(X; name="guided")
+# println(ll)
+# plot(ptrue, pobs, pguided, layout=lo)
+# @show ll
+
+# Zᵒ = deepcopy(Z)
+# update!(Zᵒ,    Z, 0.3, 1:4);
+# Xᵒ, llᵒ  = forward(P, Π, B, Zᵒ, logw);
+# @show ll, llᵒ, llᵒ-ll
+############################################################
 
 
-###################
 P = SIRguided(Ptrue.ξ, Ptrue.λ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ)
-P = SIRguided(Ptrue.ξ, Ptrue.λ, .2, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ)
+#P = SIRguided(Ptrue.ξ, 5.0, .2, 7.0, Ptrue.τ, Ptrue.𝒩, ℐ)
 
-n_blocks= 4
+blocksize = 4
+n_blocks= n_times ÷ blocksize
 blocks = make_partition(n_times, n_blocks)
-#blocks =[ 1:1]
+blocks = [1:1, 2:5, 6:n_particles]
 
-Xs, lls, θs = mcmc(𝒪, P, Π, blocks; δ=0.1, ITER=10_000);
-lo = @layout [a;b]
-λs = getindex.(θs,1);
-μs = getindex.(θs,2);
-plot(plot(lls), plot(μs), layout=lo)
-mean(λs); mean(μs)
+
+Xs, lls, θs, P = mcmc(𝒪, P, Π, blocks; δ=0.1, 
+                ITER=20_000, 
+                adaptmax= 1000,
+                par_estimation=true);#false);
+lo = @layout [a;b;c;d]
+λs = getindex.(θs,:λ);
+μs = getindex.(θs,:μ);
+νs = getindex.(θs,:ν);
+plot(plot(lls), plot(λs, title="λ", label=""), 
+                plot(μs, title="μ", label=""), 
+                plot(νs, title="ν", label=""), 
+                layout=lo, size=(400, 600))
+
+mean(λs) 
+mean(μs) 
+mean(νs)
+params(Ptrue)
 
 lo = @layout  [a;b;c]
 plot(plotpath(Xtrue;name="true"),
@@ -146,16 +163,37 @@ plotpath(Xs[end]; name="guided"),
 plotpath(Xobs;name="observed"),
 layout=lo, size=(700,700))
 
-
 L = length(Xs)
  anim = @animate for i in eachindex(Xs)
      plot(plotpath(Xtrue;name="true"),
           plotpath(Xs[i]; name="$i of $L"),
           plotpath(Xobs;name="observed"),
-          layout=lo)
+          layout=lo, size=(400, 600))
  end
 
  gif(anim, "anim.gif", fps=5)
+
+
+
+## ggplot
+using DataFrames
+using RCall
+len = length(μs)
+dout = DataFrame(value=vcat(μs, λs, νs), 
+                iteration=repeat(1:len, outer=3), 
+                parameter=repeat(["mu", "lambda", "nu"], inner=len))
+
+    @rput dout
+    R"""
+    library(tidyverse)
+    str(dout)
+    dout %>% ggplot(aes(x=iteration, y=value)) + 
+            geom_path() + 
+            facet_wrap(~parameter, ncol=1)
+    """
+
+
+
 
 
 prior = (Exponential(5.0), Exponential(5.0), Exponential(1.0))
