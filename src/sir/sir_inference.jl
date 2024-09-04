@@ -28,6 +28,11 @@ using BenchmarkTools
 #
 # end
 
+n_particles = 30
+n_times = 100
+N = n_particles
+
+
 include("createdata.jl")
 include("funcdefs.jl")
 include("backward.jl")
@@ -36,13 +41,17 @@ include("mcmc.jl")
 include("partition.jl")
 include("plotting.jl")
 
+include("setup.jl")
+include("BoyenKollerFiltering.jl")
+include("FactoredFiltering.jl")
+include("backwardEP.jl")
+
+
 figdir = mkpath(joinpath(wd,"figs"))
 
 ############## generate data
 #Random.seed!(30)
 
-n_particles = 30
-n_times = 100
 samplesize = (n_times * n_particles)÷20
 
 # set neighbourhood structure
@@ -95,6 +104,7 @@ frac_infected_observed = sum(Xobs_flat .== _I_)/(length(Xobs_flat) - sum(Xobs_fl
 P = SIRguided(Ptrue.ξ, Ptrue.λ ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ)
 
 B, logw = backward(P, 𝒪)
+B, logw = backwardEP(P, 𝒪)
 
 # set prior
 Π = [SA_F64[0.9, 0.1, 0.0] for _ in 1:n_particles]
@@ -102,6 +112,11 @@ B, logw = backward(P, 𝒪)
 
 ############################################################
 ##### this can go later #######
+
+Z = innovations(n_times, n_particles)
+X, ll  = forward(P, Π, B, Z, logw);
+ll
+loglikelihood(X, Π, B, 𝒪, O) # should be the same as ll
 
 # @show ll
 
