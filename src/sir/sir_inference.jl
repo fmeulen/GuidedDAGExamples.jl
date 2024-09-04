@@ -1,6 +1,7 @@
 wd = @__DIR__
 cd(wd)
 
+figdir = mkpath(joinpath(wd,"figs"))
 
 using Distributions
 #PLOT = true
@@ -17,7 +18,7 @@ using BenchmarkTools
 
 # if PLOT
     # using RCall
-    using Plots
+using Plots
 # else
 #     macro rput(args...)
 #     end
@@ -48,11 +49,11 @@ n_times = 100
 
 N = n_particles
 size_neighbourhood = 2
-include("setup.jl")
+include("setup.jl") # for EP backward filtering
 
 
 
-figdir = mkpath(joinpath(wd,"figs"))
+
 
 ############## generate data
 #Random.seed!(30)
@@ -60,7 +61,6 @@ figdir = mkpath(joinpath(wd,"figs"))
 samplesize = (n_times * n_particles)÷20
 
 # set neighbourhood structure
-
 𝒩 = set_neighbours(n_particles, size_neighbourhood)
 
 # set true pars
@@ -109,8 +109,8 @@ frac_infected_observed = sum(Xobs_flat .== _I_)/(length(Xobs_flat) - sum(Xobs_fl
 ℐ = [fill(frac_infected_observed, n_particles) for _ ∈ 1:n_times] # of course these obs schemes use some bias but fine if only first step
 P = SIRguided(Ptrue.ξ, Ptrue.λ ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ)
 
-B, logw = backward(P, 𝒪)
-B, logw = backwardEP(P, 𝒪)
+
+
 
 # set prior
 Π = [SA_F64[0.9, 0.1, 0.0] for _ in 1:n_particles]
@@ -118,11 +118,17 @@ B, logw = backwardEP(P, 𝒪)
 
 ############################################################
 ##### this can go later #######
-
+B, logw = backward(P, 𝒪)
 Z = innovations(n_times, n_particles)
 X, ll  = forward(P, Π, B, Z, logw);
 ll
 loglikelihood(X, Π, B, 𝒪, O) # should be the same as ll
+
+B_EP, logw = backwardEP(P, 𝒪)
+X, ll  = forward(P, Π, B_EP, Z, logw);
+ll
+loglikelihood(X, Π, B_EP, 𝒪, O) # should be the same as ll
+
 
 # @show ll
 

@@ -14,7 +14,7 @@ function guide!(xnext, xcurrent, P::SIRguided, h, pullback, z, infected_auxiliar
     for i ∈ eachindex(xcurrent)
         if xcurrent[i]==_S_
             ni = nr_infected_neighb(xcurrent, P.𝒩, i)
-            p = pS(P.λ * ni * P.τ) .* h[i] # allocates 10
+            p = pS(P.λ * ni * P.τ) .* h[i] 
 
             # following three lines should not be part of this function
             ñi = infected_auxiliary[i]
@@ -108,7 +108,7 @@ function loglikelihood(Xs, Π, B, 𝒪, O)
             elseif x==_R_
                 p = pR(P.ν * P.τ)
             end
-            ll += (t ≠ n_times)*log(dot(p,g2)) - log(g1[ind(x)]) # for i = n_particles dot(p, g2)  == 1
+            ll += log(dot(p,g2)) - log(g1[ind(x)]) # for i = n_particles dot(p, g2)  == 1
         end
     end
     # contribution from observations
