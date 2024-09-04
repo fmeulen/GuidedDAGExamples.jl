@@ -102,27 +102,6 @@ B, logw = backward(P, 𝒪)
 
 ############################################################
 ##### this can go later #######
-Z = innovations(n_times, n_particles)
-X, ll  = forward(P, Π, B, Z, logw);
-ll
-logweight(X, Π, B, 𝒪, O) # should be the same as ll
-
-
-# need this info to make old code work without many edits. would rather have this in the function backwardEP
-N = n_particles
-T = n_times
-
-size_neighbourhood = length(P.𝒩[1])
-root = x0
-
-# old setup function and functions
-include("FactoredFiltering.jl")
-include("BoyenKollerFiltering.jl")
-include("setup.jl")
-include("backwardEP.jl")
-B2, logw2 = backwardEP(P, 𝒪)
-logweight(X, Π, B2, 𝒪, O)
-# I have only edited up to here and not run anything further
 
 # @show ll
 
