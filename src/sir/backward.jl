@@ -101,8 +101,7 @@ count_infections(X, 𝒩) = [count_infections_at_t(x, 𝒩)  for x ∈ X]
 function backward(P::SIRguided, 𝒪)
     n_times = length(𝒪)
     n_particles = length(𝒪[1].x)
-    ll0 = 0.0
-
+    
     h = fill(SA_F64[1, 1, 1], n_particles) #start with uniforms (should this be normalised?)
     fuse!(𝒪[n_times], h)                 # fuse in obs at time T ( == n_times)
     B = [copy(h)]                        # save guiding h in B array
@@ -110,9 +109,8 @@ function backward(P::SIRguided, 𝒪)
         pullback!(h, P.ℐ[t], P)          # pullback with h_{t+1} and 'known' nr. Infected at time t
         fuse!(𝒪[t], h)                   # fuse pullback h_t with obs_t
 
-        lw = normalize!(h)               # normalise
-        ll0 += lw                        # account for normalisation
+        normalize!(h)               # normalise
         pushfirst!(B, copy(h))           # save guiding h in Barray
     end
-    B, ll0
+    B
 end

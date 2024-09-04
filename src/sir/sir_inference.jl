@@ -118,16 +118,16 @@ P = SIRguided(Ptrue.ξ, Ptrue.λ ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, �
 
 ############################################################
 ##### this can go later #######
-B, logw = backward(P, 𝒪)
-Z = innovations(n_times, n_particles)
-X, ll  = forward(P, Π, B, Z, logw);
-ll
-loglikelihood(X, Π, B, 𝒪, O) # should be the same as ll
 
-B_EP, logw = backwardEP(P, 𝒪)
-X, ll  = forward(P, Π, B_EP, Z, logw);
+B = backward(P, 𝒪)
+Z = innovations(n_times, n_particles)
+X, ll  = forward(P, Π, B, Z,  𝒪, O);
 ll
-loglikelihood(X, Π, B_EP, 𝒪, O) # should be the same as ll
+
+B_EP = backwardEP(P, 𝒪)
+X, ll  = forward(P, Π, B_EP, Z,  𝒪, O);
+ll
+
 
 
 # @show ll

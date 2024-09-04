@@ -53,5 +53,5 @@ function backwardEP(P::SIRguided, 𝒪)
     # recall that in my implementation ms[t].htransforms == ms[t+1].approximatepullback, thus
     B = [[ms[2].approximatepullback[i] for i in 1:N], [[ms[t].factoredhtransform[i] for i in 1:N] for t in 2:T]...]
 
-    B, logh
+    B
 end

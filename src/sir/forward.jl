@@ -8,24 +8,12 @@
 
     returns new state and logweight
 """
-function guide!(xnext, xcurrent, P::SIRguided, h, pullback, z, infected_auxiliary)
+function guide!(xnext, xcurrent, P::SIRguided, h, z)
     @assert length(xnext)==length(xcurrent)==length(h)==length(z)
-    logweight = 0.0
     for i ∈ eachindex(xcurrent)
         if xcurrent[i]==_S_
             ni = nr_infected_neighb(xcurrent, P.𝒩, i)
             p = pS(P.λ * ni * P.τ) .* h[i] 
-
-            # following three lines should not be part of this function
-            ñi = infected_auxiliary[i]
-            p̃ = pS(P.λ * ñi * P.τ) .* h[i]
-            logsumptilde = log(sum(p̃))
-            logweight += log(sum(p)) - log(sum(p̃))
-
-            #lwcontribution = log(pullback[i][Int(xcurrent[i])])
-            #println((logsumptilde, lwcontribution))
-            #println(logsumptilde - lwcontribution)
-            #logweight += log(sum(p)) - lwcontribution
         elseif xcurrent[i]==_I_
             p = pI(P.μ * P.τ) .* h[i]
         elseif xcurrent[i]==_R_
@@ -33,7 +21,6 @@ function guide!(xnext, xcurrent, P::SIRguided, h, pullback, z, infected_auxiliar
         end
         xnext[i] = rand𝒳(z[i], p/sum(p))
     end
-    logweight
 end
 
 
@@ -49,32 +36,47 @@ end
 
     returns simulated path and loglikelihood
 """
-function forward(P::SIRguided, Π, B, Z, l0)
+function forward(P::SIRguided, Π, B, Z, 𝒪, O)
     n_steps, n_particles = length(Z), length(Π)
-
-    ll = l0
 
     # sample initial state x1
     X = Vector{State}(undef, n_particles)
     for i in 1:n_particles
         p = Π[i] .* B[1][i]
         X[i] = rand𝒳(Z[1][i], p/sum(p))
-        ll += log(sum(p)) # contribution to loglik of pullback of prior Π
     end
 
     Xs = [copy(X)]
     for t in 2:n_steps # x2 through xT
-        lw = guide!(X, Xs[t-1], P, B[t], B[t-1], Z[t], P.ℐ[t-1])
-        ll += lw
+        guide!(X, Xs[t-1], P, B[t], Z[t])
         push!(Xs, copy(X))
     end
-    # compute contribution of fully simulated guided path to likelihood, using B and (perhaps) 𝒪
+    ll = loglikelihood(Xs, Π, B, 𝒪, O)
     Xs, ll
 end
 
+# in place version
+function forward!(X, P::SIRguided, Π, B, Z, 𝒪, O)
+    n_steps, n_particles = length(Z), length(Π)
+
+    # sample initial state
+    for i in 1:n_particles
+        p = Π[i] .* B[1][i]
+        X[1][i] = rand𝒳(Z[1][i], p/sum(p))
+    end
+
+    for t in 2:n_steps
+        guide!(X[t], X[t-1], P, B[t], Z[t])
+    end
+    loglikelihood(X, Π, B, 𝒪, O)
+end
+
+
+
+
 # separate function to compute the logweight
 """
-    logweight(Xs, Π, B, 𝒪, O)
+    loglikelihood(Xs, Π, B, 𝒪, O)
 
     Xs: simulated guided process
     Π: prior on initial state
@@ -124,21 +126,3 @@ end
 
 
 
-# in place version
-function forward!(X, P::SIRguided, Π, B, Z, l0)
-    n_steps, n_particles = length(Z), length(Π)
-    ll = l0
-
-    # sample initial state
-    for i in 1:n_particles
-        p = Π[i] .* B[1][i]
-        X[1][i] = rand𝒳(Z[1][i], p/sum(p))
-        ll += log(sum(p))
-    end
-
-    for t in 2:n_steps
-        lw = guide!(X[t], X[t-1], P, B[t], B[t-1], Z[t], P.ℐ[t-1])
-        ll += lw
-    end
-    ll
-end
