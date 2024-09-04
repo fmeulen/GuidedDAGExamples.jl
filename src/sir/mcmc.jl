@@ -10,7 +10,7 @@ function update!(Zᵒ, Z, δ, block)
     n_times = length(Z)
     ℒ = Uniform(-δ, δ)
     for i in 1:n_particles
-        for t ∈ 1:n_times         
+        for t ∈ 1:n_times
             Zᵒ[t][i] = t ∈ block ? mod(Z[t][i] + rand(ℒ), 1) : Z[t][i]
         end
     end
@@ -18,16 +18,16 @@ end
 
 
 function mcmc(𝒪, P::SIRguided, Π, blocks;  δ = 0.1, γ = 0.7,
-     acc = 0, ITER = 100, adaptmax=1000, 
+     acc = 0, ITER = 100, adaptmax=1000,
      par_estimation = true,
-     propσ = 0.1, 
+     propσ = 0.1,
      prior = (μ=Exponential(5.0), λ = Exponential(5.0), ν=Exponential(5.0))
      )
 
 
     n_times, n_particles = length(𝒪), length(𝒪[1].x)
     n_blocks = length(blocks)
-    
+
     B, ll0 = backward(P, 𝒪)
     Z = innovations(n_times, n_particles)
     Zᵒ = deepcopy(Z)
@@ -42,23 +42,23 @@ function mcmc(𝒪, P::SIRguided, Π, blocks;  δ = 0.1, γ = 0.7,
         for block in blocks
             update!(Zᵒ, Z, δ, block)
             llᵒ = forward!(Xᵒ, P, Π, B, Zᵒ, ll0)
-                          
+
             if log(rand()) < llᵒ - ll
                 mod(i,500)==0 && println(i,"  ",ll,"  ", llᵒ,"  ", llᵒ-ll, "  accepted")
                 ll = llᵒ
                 for t ∈ block
                     for i in 1:n_particles
-                        Z[t][i] = Zᵒ[t][i] 
+                        Z[t][i] = Zᵒ[t][i] # you can just swap the objects by reference i think
                     end
                 end
 
                 for t in 1:n_times
                     for i in 1:n_particles
-                        X[t][i] = Xᵒ[t][i] 
+                        X[t][i] = Xᵒ[t][i]
                     end
                 end
                 acc += 1
-            else 
+            else
                 mod(i,500)==0 && println(i, "   ", ll,"  ", llᵒ,"  ", llᵒ-ll, "  rejected")
             end
             i ÷ 10 == 0 && push!(XX, deepcopy(X))
@@ -70,7 +70,7 @@ function mcmc(𝒪, P::SIRguided, Π, blocks;  δ = 0.1, γ = 0.7,
             B, ll0 = backward(P, 𝒪)
             ll = forward!(X, P, Π, B, Z, ll0)
         end
-    
+
         if par_estimation
             # update μ
             μᵒ = P.μ * exp(propσ*randn())
@@ -118,6 +118,3 @@ function updatepar!(Xᵒ, X, Pᵒ, P, Π, 𝒪, B, Z, ll0, ll, logprior_proposal
     end
     ll, ll0, P, B
 end
-
-
-

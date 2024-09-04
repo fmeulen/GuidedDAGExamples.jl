@@ -22,7 +22,7 @@ end
 
 param(P::SIRguided) = (λ=P.λ, μ=P.μ, ν=P.ν)
 
-@enum State::UInt8 _S_=1 _I_=2 _R_=3 _L_=0 
+@enum State::UInt8 _S_=1 _I_=2 _R_=3 _L_=0
 const 𝒳 = @SVector [_S_,_I_,_R_]
 
 # state space of one person
@@ -42,14 +42,14 @@ ind(x) = Int(x)
 
 
 function observationmessage(x::State)
-    if x==_S_ 
+    if x==_S_
         return(SA_F64[1, 0, 0])
     elseif x==_I_
         return(SA_F64[0, 1, 0])
     elseif x==_R_
         return(SA_F64[0, 0, 1])
-    else 
-        return(SA_F64[1, 1, 1])  
+    else
+        return(SA_F64[1, 1, 1])
     end
 end
 
@@ -82,12 +82,12 @@ end
 #### forward sampling #####
 rand𝒳(z, p)= z < p[1] ? _S_ : ( z > 1-p[3] ? _R_ : _I_ )
 function rand𝒳!(x::State, z, p)
-    if z < p[1] 
-        x= _S_ 
-    elseif z > 1-p[3] 
-        x=  _R_ 
-    else 
-        x= _I_ 
+    if z < p[1]
+        x= _S_
+    elseif z > 1-p[3]
+        x=  _R_
+    else
+        x= _I_
     end
 end
 """
@@ -131,7 +131,7 @@ i: index of individual to be forward simulated
 x: current state of all individuals
 z: innovation for this step
 """
-function sample_particle(P::SIRforward, i, x, z) 
+function sample_particle(P::SIRforward, i, x, z)
     p = κ(P, i, x)
     sample𝒳(x[i], z, p)
 end
@@ -143,7 +143,7 @@ sample(P::SIRforward, x, z) = [sample_particle(P, i, x, z[i]) for i in eachindex
 
     sample SIR-process over n time instances, where the first time instance is x0
 """
-function sample_trajectory(P::SIRforward, n_times::Int64, x0)
+function sample_trajectory(P::SIRforward, n_times::Int64, x0) # i would prefer to call this x1 due to indexing, just have time steps 1:n_times (inclusive)
     X = [x0]
     n_particles = length(x0)
     for j in 2:n_times

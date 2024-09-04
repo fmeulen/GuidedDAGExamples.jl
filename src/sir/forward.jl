@@ -1,16 +1,16 @@
 """
     function guide(x, P::SIRguided, h, z, infected_auxiliary)
 
-    evolve the guided process for one time step from 
+    evolve the guided process for one time step from
     present state x using htransform h with randomness z
-    
+
     infected_auxiliary: nr of infected under auxiliary process
 
-    returns new state and logweight 
+    returns new state and logweight
 """
-function guide!(xnext, xcurrent, P::SIRguided, h, z, infected_auxiliary)
+function guide!(xnext, xcurrent, P::SIRguided, h, pullback, z, infected_auxiliary)
     @assert length(xnext)==length(xcurrent)==length(h)==length(z)
-    logweight = 0.0 
+    logweight = 0.0
     for i ∈ eachindex(xcurrent)
         if xcurrent[i]==_S_
             ni = nr_infected_neighb(xcurrent, P.𝒩, i)
@@ -19,13 +19,19 @@ function guide!(xnext, xcurrent, P::SIRguided, h, z, infected_auxiliary)
             # following three lines should not be part of this function
             ñi = infected_auxiliary[i]
             p̃ = pS(P.λ * ñi * P.τ) .* h[i]
+            logsumptilde = log(sum(p̃))
             logweight += log(sum(p)) - log(sum(p̃))
+
+            #lwcontribution = log(pullback[i][Int(xcurrent[i])])
+            #println((logsumptilde, lwcontribution))
+            #println(logsumptilde - lwcontribution)
+            #logweight += log(sum(p)) - lwcontribution
         elseif xcurrent[i]==_I_
             p = pI(P.μ * P.τ) .* h[i]
         elseif xcurrent[i]==_R_
             p = pR(P.ν * P.τ) .* h[i]
         end
-        xnext[i] = rand𝒳(z[i], p/sum(p)) 
+        xnext[i] = rand𝒳(z[i], p/sum(p))
     end
     logweight
 end
@@ -35,7 +41,7 @@ end
     function forward(P::SIRguided, Π, B, Z, logw)
 
     simulate guided process using prior Π on the initial state (indexed by "1")
- 
+
     B contains output of backward filter (contains n_times vectors, where each of these vectors
     contains n_particle vectors in ℝ³)
 
@@ -47,8 +53,8 @@ function forward(P::SIRguided, Π, B, Z, l0)
     n_steps, n_particles = length(Z), length(Π)
 
     ll = l0
-    
-    # sample initial state
+
+    # sample initial state x1
     X = Vector{State}(undef, n_particles)
     for i in 1:n_particles
         p = Π[i] .* B[1][i]
@@ -57,8 +63,8 @@ function forward(P::SIRguided, Π, B, Z, l0)
     end
 
     Xs = [copy(X)]
-    for t in 2:n_steps
-        lw = guide!(X, Xs[t-1], P, B[t], Z[t], P.ℐ[t-1])
+    for t in 2:n_steps # x2 through xT
+        lw = guide!(X, Xs[t-1], P, B[t], B[t-1], Z[t], P.ℐ[t-1])
         ll += lw
         push!(Xs, copy(X))
     end
@@ -89,21 +95,21 @@ function loglikelihood(Xs, Π, B, 𝒪, O)
     for t in 1:n_times
         xt = Xs[t]
         bt = B[t]
-        
+
         for i in 1:n_particles
-            x = xt[i] 
+            x = xt[i]
             g1 = bt[i]
             g2 = t==n_times ?  SA_F64[1, 1, 1] : B[t+1][i]
             if x ==_S_
                 ni = nr_infected_neighb(xt, P.𝒩, i)
-                p = pS(P.λ * ni * P.τ)  
+                p = pS(P.λ * ni * P.τ)
             elseif x==_I_
-                p = pI(P.μ * P.τ) 
+                p = pI(P.μ * P.τ)
             elseif x==_R_
-                p = pR(P.ν * P.τ) 
+                p = pR(P.ν * P.τ)
             end
-            ll += (t ≠ n_times)*log(dot(p,g2)) - log(g1[ind(x)]) 
-        end    
+            ll += (t ≠ n_times)*log(dot(p,g2)) - log(g1[ind(x)]) # for i = n_particles dot(p, g2)  == 1
+        end
     end
     # contribution from observations
     for t in eachindex(𝒪)
@@ -113,7 +119,7 @@ function loglikelihood(Xs, Π, B, 𝒪, O)
             ll += log(O[ ind(xtk) , ind(observation)]) # ind is a function that converts S,I,R to 1,2,3
         end
     end
-    ll        
+    ll
 end
 
 
@@ -129,12 +135,10 @@ function forward!(X, P::SIRguided, Π, B, Z, l0)
         X[1][i] = rand𝒳(Z[1][i], p/sum(p))
         ll += log(sum(p))
     end
-    
+
     for t in 2:n_steps
-        lw = guide!(X[t], X[t-1], P, B[t], Z[t], P.ℐ[t-1])     
+        lw = guide!(X[t], X[t-1], P, B[t], B[t-1], Z[t], P.ℐ[t-1])
         ll += lw
     end
     ll
 end
-
-

@@ -3,7 +3,7 @@ cd(wd)
 
 
 using Distributions
-PLOT = true
+#PLOT = true
 using LinearAlgebra
 using DataFrames
 using Random
@@ -15,18 +15,18 @@ using UnPack
 using Accessors
 using BenchmarkTools
 
-if PLOT
-    using RCall
+# if PLOT
+    # using RCall
     using Plots
-else
-    macro rput(args...)
-    end
-    macro R_str(args...)
-    end
-    macro layout(args...)
-    end
-
-end
+# else
+#     macro rput(args...)
+#     end
+#     macro R_str(args...)
+#     end
+#     macro layout(args...)
+#     end
+#
+# end
 
 include("createdata.jl")
 include("funcdefs.jl")
@@ -53,14 +53,14 @@ samplesize = (n_times * n_particles)÷20
 Ptrue = SIRforward(ξ, λ, μ, ν, τ, 𝒩)
 
 # set initial state
-x0 = vcat(_I_, fill(_S_,n_particles-2),_I_)
+x0 = vcat(_I_, fill(_S_,n_particles-2),_I_) # call this x1
 #x0 = [_I_, _S_, _S_, _S_, _S_]
 #x0 =  vcat(fill(_S_,3), [_I_], fill(_S_,7), [_I_], fill(_S_,n_particles-12))
 
 Xtrue = sample_trajectory(Ptrue::SIRforward, n_times, x0)
 # visualise
 pforward = plotpath(Xtrue; name="forward")
-PLOT && pforward
+#PLOT && pforward
 
 # set observation scheme
 δobs = 0.001
@@ -84,14 +84,14 @@ plot(pforward, pobs, layout=lo)
 # construct guided process from 𝒪 and 𝒩
 Xobs = [O.x for O in 𝒪]
 ℐ = count_infections(Xobs, 𝒩)
-P = SIRguided(Ptrue.ξ, Ptrue.λ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ)
+P = SIRguided(Ptrue.ξ, Ptrue.λ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ) # this is just a collection of stuff, not a constructor
 
 #exp_neighb(P,ave_ninf) = (λ=ave_ninf*P.λ, μ=P.μ, ν=P.ν)
 Xobs_flat = vcat(Xobs...)
 
 # set guided process
 frac_infected_observed = sum(Xobs_flat .== _I_)/(length(Xobs_flat) - sum(Xobs_flat .== _L_))
-ℐ = [fill(frac_infected_observed, n_particles) for _ ∈ 1:n_times]
+ℐ = [fill(frac_infected_observed, n_particles) for _ ∈ 1:n_times] # of course these obs schemes use some bias but fine if only first step
 P = SIRguided(Ptrue.ξ, Ptrue.λ ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ)
 
 B, logw = backward(P, 𝒪)
@@ -102,10 +102,7 @@ B, logw = backward(P, 𝒪)
 
 ############################################################
 ##### this can go later #######
- Z = innovations(n_times, n_particles)
- X, ll  = forward(P, Π, B, Z, logw);
- ll
-loglikelihood(X, Π, B, 𝒪, O) # should be the same as ll
+
 # @show ll
 
 # Y = copy(X);
@@ -136,24 +133,24 @@ P = SIRguided(Ptrue.ξ, Ptrue.λ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ
 blocksize = 4
 n_blocks= n_times ÷ blocksize
 blocks = make_partition(n_times, n_blocks)
-blocks = [1:1, 2:5, 6:n_particles]
+#blocks = [1:1, 2:5, 6:n_particles]
 
 
-Xs, lls, θs, P = mcmc(𝒪, P, Π, blocks; δ=0.1, 
-                ITER=20_000, 
+Xs, lls, θs, P = mcmc(𝒪, P, Π, blocks; δ=0.1,
+                ITER=20_000,
                 adaptmax= 1000,
-                par_estimation=true);#false);
+                par_estimation=false);#true);
 lo = @layout [a;b;c;d]
 λs = getindex.(θs,:λ);
 μs = getindex.(θs,:μ);
 νs = getindex.(θs,:ν);
-plot(plot(lls), plot(λs, title="λ", label=""), 
-                plot(μs, title="μ", label=""), 
-                plot(νs, title="ν", label=""), 
+plot(plot(lls), plot(λs, title="λ", label=""),
+                plot(μs, title="μ", label=""),
+                plot(νs, title="ν", label=""),
                 layout=lo, size=(400, 600))
 
-mean(λs) 
-mean(μs) 
+mean(λs)
+mean(μs)
 mean(νs)
 params(Ptrue)
 
@@ -179,16 +176,16 @@ L = length(Xs)
 using DataFrames
 using RCall
 len = length(μs)
-dout = DataFrame(value=vcat(μs, λs, νs), 
-                iteration=repeat(1:len, outer=3), 
+dout = DataFrame(value=vcat(μs, λs, νs),
+                iteration=repeat(1:len, outer=3),
                 parameter=repeat(["mu", "lambda", "nu"], inner=len))
 
     @rput dout
     R"""
     library(tidyverse)
     str(dout)
-    dout %>% ggplot(aes(x=iteration, y=value)) + 
-            geom_path() + 
+    dout %>% ggplot(aes(x=iteration, y=value)) +
+            geom_path() +
             facet_wrap(~parameter, ncol=1)
     """
 
