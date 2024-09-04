@@ -10,7 +10,8 @@ function backwardEP(P::SIRguided, 𝒪)
     T = n_times
 
     size_neighbourhood = length(P.𝒩[1])
-    root = x0
+# x0 is not passed to the function, I would not expect it here
+    root = x0  
 
 
     # the following code is taken from SIR.jl
@@ -19,6 +20,9 @@ function backwardEP(P::SIRguided, 𝒪)
     δ = 0.0 # artificial par to become infected without infected neighbours
     τ = P.τ # discretisation time step of SIR model
 
+    statespace = Dict([i => E for i in 1:N])
+    parents = Dict(i => intersect(i-size_neighbourhood:i+size_neighbourhood, 1:N) for i in 1:N)
+    
     # Parametric description of the entire forward model (I wish to pass δ and τ as well)
     SIR(θ, δ, τ) = FactorisedMarkovChain(statespace, parents, dynamics(θ, δ, τ), root, (N, T))
 
@@ -33,6 +37,7 @@ function backwardEP(P::SIRguided, 𝒪)
 
     obs = (obsparents, obscpds, obsstates)
 
+# We don't want this contribution, can we get rid of it?    
     # Prior is required for contribution from root.
     Πroot =  Dict(i => [0.98, 0.02, 0.00] for i in 1:N)
 

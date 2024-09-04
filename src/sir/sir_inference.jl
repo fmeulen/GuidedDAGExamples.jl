@@ -28,9 +28,6 @@ using BenchmarkTools
 #
 # end
 
-n_particles = 30
-n_times = 100
-N = n_particles
 
 
 include("createdata.jl")
@@ -41,10 +38,18 @@ include("mcmc.jl")
 include("partition.jl")
 include("plotting.jl")
 
-include("setup.jl")
+
 include("BoyenKollerFiltering.jl")
 include("FactoredFiltering.jl")
 include("backwardEP.jl")
+
+n_particles = 30
+n_times = 100
+
+N = n_particles
+size_neighbourhood = 2
+include("setup.jl")
+
 
 
 figdir = mkpath(joinpath(wd,"figs"))
@@ -55,7 +60,8 @@ figdir = mkpath(joinpath(wd,"figs"))
 samplesize = (n_times * n_particles)÷20
 
 # set neighbourhood structure
-𝒩 = set_neighbours(n_particles, 2)
+
+𝒩 = set_neighbours(n_particles, size_neighbourhood)
 
 # set true pars
 ξ, λ, μ, ν, τ =  1.0, 3.5, 2.0, 3.1, 0.1
