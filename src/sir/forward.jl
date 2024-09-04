@@ -67,7 +67,16 @@ function forward(P::SIRguided, Π, B, Z, l0)
 end
 
 # separate function to compute the logweight
-function logweight(Xs, Π, B, 𝒪, O)
+"""
+    logweight(Xs, Π, B, 𝒪, O)
+
+    Xs: simulated guided process
+    Π: prior on initial state
+    B: backward filter
+    𝒪: observations
+    O: emission matrix to observations (assumed to be constant for all observations)
+"""
+function loglikelihood(Xs, Π, B, 𝒪, O)
 # compute logweight for guided path Xs that was obtained using backward filter B
     ll = 0.0
     # pullback from prior

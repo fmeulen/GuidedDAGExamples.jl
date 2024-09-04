@@ -105,7 +105,7 @@ B, logw = backward(P, 𝒪)
  Z = innovations(n_times, n_particles)
  X, ll  = forward(P, Π, B, Z, logw);
  ll
-logweight(X, Π, B, 𝒪, O) # should be the same as ll
+loglikelihood(X, Π, B, 𝒪, O) # should be the same as ll
 # @show ll
 
 # Y = copy(X);
