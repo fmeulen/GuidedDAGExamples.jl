@@ -36,7 +36,8 @@ end
 
     returns simulated path and loglikelihood
 """
-function forward(P::SIRguided, Π, B, Z, 𝒪, O)
+function forward(P::SIRguided, Π, B, Z)
+    @unpack 𝒪, O = P
     n_steps, n_particles = length(Z), length(Π)
 
     # sample initial state x1
@@ -56,7 +57,8 @@ function forward(P::SIRguided, Π, B, Z, 𝒪, O)
 end
 
 # in place version
-function forward!(X, P::SIRguided, Π, B, Z, 𝒪, O)
+function forward!(X, P::SIRguided, Π, B, Z)
+    @unpack 𝒪, O = P
     n_steps, n_particles = length(Z), length(Π)
 
     # sample initial state

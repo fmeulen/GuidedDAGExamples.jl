@@ -78,7 +78,7 @@ pforward = plotpath(Xtrue; name="forward")
 #PLOT && pforward
 
 # set observation scheme
-δobs = 0.001
+δobs = 0.0001
 O = SA[1.0-δobs δobs/2.0 δobs/2.0; δobs/2.0 1.0- δobs δobs/2.0; δobs/2.0 δobs/2.0 1-δobs]
 
 
@@ -99,7 +99,7 @@ plot(pforward, pobs, layout=lo)
 # construct guided process from 𝒪 and 𝒩
 Xobs = [O.x for O in 𝒪]
 ℐ = count_infections(Xobs, 𝒩)
-P = SIRguided(Ptrue.ξ, Ptrue.λ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ) # this is just a collection of stuff, not a constructor
+P = SIRguided(Ptrue.ξ, Ptrue.λ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ, 𝒪, O) # this is just a collection of stuff, not a constructor
 
 #exp_neighb(P,ave_ninf) = (λ=ave_ninf*P.λ, μ=P.μ, ν=P.ν)
 Xobs_flat = vcat(Xobs...)
@@ -107,10 +107,7 @@ Xobs_flat = vcat(Xobs...)
 # set guided process
 frac_infected_observed = sum(Xobs_flat .== _I_)/(length(Xobs_flat) - sum(Xobs_flat .== _L_))
 ℐ = [fill(frac_infected_observed, n_particles) for _ ∈ 1:n_times] # of course these obs schemes use some bias but fine if only first step
-P = SIRguided(Ptrue.ξ, Ptrue.λ ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ)
-
-
-
+P = SIRguided(Ptrue.ξ, Ptrue.λ ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ, 𝒪, O)
 
 # set prior
 Π = [SA_F64[0.9, 0.1, 0.0] for _ in 1:n_particles]
@@ -119,15 +116,20 @@ P = SIRguided(Ptrue.ξ, Ptrue.λ ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, �
 ############################################################
 ##### this can go later #######
 
-B = backward(P, 𝒪)
+
+@time B = backward(P);
+@time B_EP = backwardEP(P);
+
 Z = innovations(n_times, n_particles)
-X, ll  = forward(P, Π, B, Z,  𝒪, O);
+
+X, ll  = forward(P, Π, B, Z);
 ll
 
-B_EP = backwardEP(P, 𝒪)
-X, ll  = forward(P, Π, B_EP, Z,  𝒪, O);
+X_EP, ll  = forward(P, Π, B_EP, Z);
 ll
-
+plot(plotpath(Xtrue; name="true"), 
+    plotpath(X, name="diagonal"), 
+    plotpath(X_EP, name="EP"))
 
 
 # @show ll
@@ -154,19 +156,25 @@ ll
 ############################################################
 
 
-P = SIRguided(Ptrue.ξ, Ptrue.λ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ)
-#P = SIRguided(Ptrue.ξ, 5.0, .2, 7.0, Ptrue.τ, Ptrue.𝒩, ℐ)
+P = SIRguided(Ptrue.ξ, Ptrue.λ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ, 𝒪, O)
+@reset P.λ = 2.0
+@reset P.μ = 4.0
+@reset P.ν = 1.0
 
-blocksize = 4
+
+blocksize = 10
 n_blocks= n_times ÷ blocksize
 blocks = make_partition(n_times, n_blocks)
 #blocks = [1:1, 2:5, 6:n_particles]
 
 
-Xs, lls, θs, P = mcmc(𝒪, P, Π, blocks; δ=0.1,
-                ITER=20_000,
+Xs, lls, θs, P = mcmc(P, Π, blocks; δ=0.05,
+                ITER=3000,
                 adaptmax= 1000,
-                par_estimation=false);#true);
+                par_estimation=true, 
+                printskip=5) ;  
+
+
 lo = @layout [a;b;c;d]
 λs = getindex.(θs,:λ);
 μs = getindex.(θs,:μ);

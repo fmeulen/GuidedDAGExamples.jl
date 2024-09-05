@@ -1,7 +1,11 @@
 using StaticArrays
 abstract type MarkovProcess end
 
-struct SIRforward <: MarkovProcess
+# abstract type BackwardFilter end
+# struct Diagonal <:
+
+
+@concrete struct SIRforward <: MarkovProcess
         ξ::Float64
         λ::Float64
         μ::Float64
@@ -10,14 +14,16 @@ struct SIRforward <: MarkovProcess
         𝒩::Array{Array{Int64,1},1}
 end
 
-struct SIRguided{T} <: MarkovProcess
+@concrete struct SIRguided{T, S} <: MarkovProcess
     ξ::Float64
     λ::Float64
     μ::Float64
     ν::Float64
     τ::Float64
-    𝒩::Array{Array{Int64,1},1}
-    ℐ::Array{Array{T,1},1}  # vector with each element a vector at that time of nr of infected neighbours
+    𝒩::Array{Array{Int64,1},1}  # neighbourhood structure
+    ℐ::Array{Array{T,1},1} # vector with each element a vector at that time of nr of infected neighbours
+    𝒪::Vector{S}
+    O::SMatrix{3, 3, Float64, 9} 
 end
 
 param(P::SIRguided) = (λ=P.λ, μ=P.μ, ν=P.ν)

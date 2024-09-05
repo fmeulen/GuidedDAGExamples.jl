@@ -4,7 +4,9 @@
         2. perform EP backward filtering given the observations
     I will resuse alot of code from earlier implementation
 """
-function backwardEP(P::SIRguided, 𝒪)
+function backwardEP(P::SIRguided)
+    @unpack 𝒪 = P
+
     # need this info to make old code work without many edits
     N = n_particles
     T = n_times

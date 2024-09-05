@@ -17,21 +17,22 @@ function update!(Zᵒ, Z, δ, block)
 end
 
 
-function mcmc(𝒪, P::SIRguided, Π, blocks;  δ = 0.1, γ = 0.7,
+function mcmc(P::SIRguided, Π, blocks;  δ = 0.1, γ = 0.7,
      acc = 0, ITER = 100, adaptmax=1000,
      par_estimation = true,
      propσ = 0.1,
-     prior = (μ=Exponential(5.0), λ = Exponential(5.0), ν=Exponential(5.0))
-     )
+     prior = (μ=Exponential(5.0), λ = Exponential(5.0), ν=Exponential(5.0)),
+     printskip=5)
+     
 
-
+    @unpack 𝒪 = P
     n_times, n_particles = length(𝒪), length(𝒪[1].x)
     n_blocks = length(blocks)
 
-    B, ll0 = backward(P, 𝒪)
+    B = backward(P)
     Z = innovations(n_times, n_particles)
     Zᵒ = deepcopy(Z)
-    X, ll  = forward(P, Π, B, Z, ll0)
+    X, ll  = forward(P, Π, B, Z)
     Xᵒ = deepcopy(X)
 
     XX = [copy(X)]
@@ -41,10 +42,10 @@ function mcmc(𝒪, P::SIRguided, Π, blocks;  δ = 0.1, γ = 0.7,
     for i in 1:ITER
         for block in blocks
             update!(Zᵒ, Z, δ, block)
-            llᵒ = forward!(Xᵒ, P, Π, B, Zᵒ, ll0)
+            llᵒ = forward!(Xᵒ, P, Π, B, Zᵒ)
 
             if log(rand()) < llᵒ - ll
-                mod(i,500)==0 && println(i,"  ",ll,"  ", llᵒ,"  ", llᵒ-ll, "  accepted")
+                mod(i,printskip)==0 && println(i,"  ",ll,"  ", llᵒ,"  ", llᵒ-ll, "  accepted")
                 ll = llᵒ
                 for t ∈ block
                     for i in 1:n_particles
@@ -59,7 +60,7 @@ function mcmc(𝒪, P::SIRguided, Π, blocks;  δ = 0.1, γ = 0.7,
                 end
                 acc += 1
             else
-                mod(i,500)==0 && println(i, "   ", ll,"  ", llᵒ,"  ", llᵒ-ll, "  rejected")
+                mod(i,printskip)==0 && println(i, "   ", ll,"  ", llᵒ,"  ", llᵒ-ll, "  rejected")
             end
             i ÷ 10 == 0 && push!(XX, deepcopy(X))
             push!(lls, ll)
@@ -67,8 +68,8 @@ function mcmc(𝒪, P::SIRguided, Π, blocks;  δ = 0.1, γ = 0.7,
         if i < adaptmax && i÷10==0
             ℐnew = γ * P.ℐ  + (1.0-γ) * count_infections(X, 𝒩)
             @reset P.ℐ = ℐnew
-            B, ll0 = backward(P, 𝒪)
-            ll = forward!(X, P, Π, B, Z, ll0)
+            B = backward(P)
+            ll = forward!(X, P, Π, B, Z)
         end
 
         if par_estimation
@@ -76,20 +77,20 @@ function mcmc(𝒪, P::SIRguided, Π, blocks;  δ = 0.1, γ = 0.7,
             μᵒ = P.μ * exp(propσ*randn())
             logprior_proposalratios = (log(μᵒ) - log(P.μ)) + logpdf(prior.μ,μᵒ) - logpdf(prior.μ,P.μ)
             Pᵒ = @set P.μ = μᵒ
-            ll, ll0, P, B = updatepar!(Xᵒ, X, Pᵒ, P, Π, 𝒪, B, Z, ll0, ll, logprior_proposalratios)
+            ll, P, B = updatepar!(Xᵒ, X, Pᵒ, P, Π,  B, Z,  ll, logprior_proposalratios)
 
             # update λ
             λᵒ = P.λ * exp(propσ*randn())
             logprior_proposalratios = (log(λᵒ) - log(P.λ)) + logpdf(prior.λ,λᵒ) - logpdf(prior.λ,P.λ)
             Pᵒ = @set P.λ = λᵒ
-            ll, ll0, P, B = updatepar!(Xᵒ, X, Pᵒ, P, Π, 𝒪, B, Z, ll0, ll, logprior_proposalratios)
+            ll, P, B = updatepar!(Xᵒ, X, Pᵒ, P, Π,  B, Z,  ll, logprior_proposalratios)
 
 
             # update ν
             νᵒ = P.ν * exp(propσ*randn())
             logprior_proposalratios = (log(νᵒ) - log(P.ν)) + logpdf(prior.ν,νᵒ) - logpdf(prior.ν,P.ν)
             Pᵒ = @set P.ν = νᵒ
-            ll, ll0, P, B = updatepar!(Xᵒ, X, Pᵒ, P, Π, 𝒪, B, Z, ll0, ll, logprior_proposalratios)
+            ll, P, B = updatepar!(Xᵒ, X, Pᵒ, P, Π,  B, Z, ll, logprior_proposalratios)
             push!(θs, param(P))
         end
     end
@@ -100,14 +101,14 @@ end
 
 
 
-function updatepar!(Xᵒ, X, Pᵒ, P, Π, 𝒪, B, Z, ll0, ll, logprior_proposalratios)
-    Bᵒ, ll0ᵒ = backward(Pᵒ, 𝒪)
-    llᵒ = forward!(Xᵒ, Pᵒ, Π, Bᵒ, Z, ll0ᵒ)
+function updatepar!(Xᵒ, X, Pᵒ, P, Π, B, Z, ll, logprior_proposalratios)
+    @unpack 𝒪 = P
+    Bᵒ = backward(Pᵒ)
+    llᵒ = forward!(Xᵒ, Pᵒ, Π, Bᵒ, Z)
 
     logA = llᵒ - ll  + logprior_proposalratios
     if log(rand()) < logA
         ll = llᵒ
-        ll0 = ll0ᵒ
         P = Pᵒ
         B, Bᵒ = Bᵒ, B
         for t in eachindex(X)
@@ -116,5 +117,5 @@ function updatepar!(Xᵒ, X, Pᵒ, P, Π, 𝒪, B, Z, ll0, ll, logprior_proposal
             end
         end
     end
-    ll, ll0, P, B
+    ll, P, B
 end

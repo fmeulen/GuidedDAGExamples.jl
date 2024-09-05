@@ -90,7 +90,7 @@ count_infections(X, 𝒩) = [count_infections_at_t(x, 𝒩)  for x ∈ X]
 
 
 """
-    backward(P::SIRguided, 𝒪)
+    backward(P::SIRguided)
 
     Returns backward information filter using diagonalisation
 
@@ -98,7 +98,8 @@ count_infections(X, 𝒩) = [count_infections_at_t(x, 𝒩)  for x ∈ X]
     by normalisation (backw filtering to root node using prior Π is not
     included)
 """
-function backward(P::SIRguided, 𝒪)
+function backward(P::SIRguided)
+    @unpack 𝒪, O = P
     n_times = length(𝒪)
     n_particles = length(𝒪[1].x)
     
