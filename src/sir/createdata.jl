@@ -4,7 +4,7 @@
     x           # values at all times (latent = _L_)
 end
 
-function create_data(samplesize, n_times, n_particles, O)
+function create_data(Xtrue, samplesize, n_times, n_particles, O)
     nrobs_at_each_time = rand(Multinomial(samplesize, n_times))  
     ind_obs = Vector{Int64}[]
     for i in 1:n_times

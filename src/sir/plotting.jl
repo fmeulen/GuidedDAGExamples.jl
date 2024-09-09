@@ -56,7 +56,8 @@ function plotpath(X;  name="path")
     color_palette = [:yellow, :red, :green, :black]
 
     # Plot the heatmap using the numeric matrix and the custom color palette
-    p = heatmap(numeric_matrix, color=color_palette,  clim=(1, 4),title=name,  xlabel="time", ylabel="individual")
+    p = heatmap(numeric_matrix, color=color_palette,  clim=(1, 4),title=name,  
+        xlabel="time", ylabel="individual", colorbar=false)
     p 
 end
  

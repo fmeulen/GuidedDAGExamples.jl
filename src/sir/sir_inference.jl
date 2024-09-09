@@ -44,7 +44,7 @@ include("BoyenKollerFiltering.jl")
 include("FactoredFiltering.jl")
 include("backwardEP.jl")
 
-n_particles = 30
+n_particles = 20
 n_times = 100
 
 N = n_particles
@@ -64,7 +64,7 @@ samplesize = (n_times * n_particles)÷20
 𝒩 = set_neighbours(n_particles, size_neighbourhood)
 
 # set true pars
-ξ, λ, μ, ν, τ =  1.0, 3.5, 2.0, 3.1, 0.1
+ξ, λ, μ, ν, τ =  1.0, 3.5, 2.5, 2.0, 0.1
 Ptrue = SIRforward(ξ, λ, μ, ν, τ, 𝒩)
 
 # set initial state
