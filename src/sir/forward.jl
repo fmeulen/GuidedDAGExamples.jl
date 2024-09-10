@@ -11,14 +11,15 @@
 function guide!(xnext, xcurrent, P::SIRguided, h, z)
     @assert length(xnext)==length(xcurrent)==length(h)==length(z)
     for i ∈ eachindex(xcurrent)
-        if xcurrent[i]==_S_
-            ni = nr_infected_neighb(xcurrent, P.𝒩, i)
-            p = pS(P.λ * ni * P.τ) .* h[i] 
-        elseif xcurrent[i]==_I_
-            p = pI(P.μ * P.τ) .* h[i]
-        elseif xcurrent[i]==_R_
-            p = pR(P.ν * P.τ) .* h[i]
-        end
+        p = κ(P, i, xcurrent) .* h[i]
+        # if xcurrent[i]==_S_
+        #     ni = nr_infected_neighb(xcurrent, P.𝒩, i)
+        #     p = pS(P.λ * ni * P.τ) .* h[i] 
+        # elseif xcurrent[i]==_I_
+        #     p = pI(P.μ * P.τ) .* h[i]
+        # elseif xcurrent[i]==_R_
+        #     p = pR(P.ν * P.τ) .* h[i]
+        # end
         xnext[i] = rand𝒳(z[i], p/sum(p))
     end
 end
@@ -104,14 +105,15 @@ function loglikelihood(Xs, Π, B, 𝒪, O)
             x = xt[i]
             g1 = bt[i]
             g2 = t==n_times ?  SA_F64[1, 1, 1] : B[t+1][i]
-            if x ==_S_
-                ni = nr_infected_neighb(xt, P.𝒩, i)
-                p = pS(P.λ * ni * P.τ)
-            elseif x==_I_
-                p = pI(P.μ * P.τ)
-            elseif x==_R_
-                p = pR(P.ν * P.τ)
-            end
+            p = κ(P, i, xt)
+            # if x ==_S_
+            #     ni = nr_infected_neighb(xt, P.𝒩, i)
+            #     p = pS(P.λ * ni * P.τ)
+            # elseif x==_I_
+            #     p = pI(P.μ * P.τ)
+            # elseif x==_R_
+            #     p = pR(P.ν * P.τ)
+            # end
             ll += log(dot(p,g2)) - log(g1[ind(x)]) # for i = n_particles dot(p, g2)  == 1
         end
     end

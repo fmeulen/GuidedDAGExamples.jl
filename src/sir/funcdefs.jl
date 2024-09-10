@@ -6,7 +6,7 @@ abstract type MarkovProcess end
 
 
 @concrete struct SIRforward <: MarkovProcess
-        ξ::Float64
+        ξ::Float64  # prob to stay in susceptible state if there are no infected neighbours
         λ::Float64
         μ::Float64
         ν::Float64
@@ -47,17 +47,6 @@ x ∈ 𝒳 is mapped into integer
 ind(x) = Int(x)
 
 
-function observationmessage(x::State)
-    if x==_S_
-        return(SA_F64[1, 0, 0])
-    elseif x==_I_
-        return(SA_F64[0, 1, 0])
-    elseif x==_R_
-        return(SA_F64[0, 0, 1])
-    else
-        return(SA_F64[1, 1, 1])
-    end
-end
 
 """
     set_neighbours(n)
@@ -87,6 +76,7 @@ end
 
 #### forward sampling #####
 rand𝒳(z, p)= z < p[1] ? _S_ : ( z > 1-p[3] ? _R_ : _I_ )
+
 function rand𝒳!(x::State, z, p)
     if z < p[1]
         x= _S_
@@ -96,38 +86,74 @@ function rand𝒳!(x::State, z, p)
         x= _I_
     end
 end
-"""
-    sample𝒳(x,z,p)
 
-Sample from 𝒳 according to probability vector p
+# """
+#     sample𝒳(x,z,p)
 
-p =  [1/4, 1/2, 1/4]
-z = rand()
-sample𝒳(_S_, z, p)
-"""
-function sample𝒳(x, u::Float64,p) # provide current state
-    b, f = BF[Int(x)][1], BF[Int(x)][3]
-    if u < p[b] return(𝒳[b])
-    elseif u > 1-p[f] return(𝒳[f])
-    else return x
-    end
+# Sample from 𝒳 according to probability vector p
+
+# p =  [1/4, 1/2, 1/4]
+# z = rand()
+# sample𝒳(_S_, z, p)
+# """
+# function sample𝒳(x, u::Float64,p) # provide current state
+#     b, f = BF[Int(x)][1], BF[Int(x)][3]
+#     if u < p[b] return(𝒳[b])
+#     elseif u > 1-p[f] return(𝒳[f])
+#     else return x
+#     end
+# end
+
+# # old 
+# pS(x) = @SVector [exp(-x), 1.0-exp(-x), 0.0]  # λ*τ
+# pI(x) = @SVector [0.0, exp(-x), 1.0-exp(-x)]      # μ*τ
+# pR(x) = @SVector [1.0-exp(-x), 0.0, exp(-x)]     # ν*τ
+
+
+
+# function κ(P, i, x) # used to be called pi
+#     if x[i] == _S_
+#         pS(P.λ * nr_infected_neighb(x,P.𝒩,i) * P.τ)
+#     elseif x[i] == _I_
+#         pI(P.μ * P.τ)
+#     elseif x[i] == _R_
+#         pR(P.ν * P.τ)
+#     end
+# end
+
+# old 
+function pS(P, ninfected) 
+    y = P.ξ * exp(-P.λ * ninfected * P.τ)
+    @SVector [y,  1.0-y, 0.0]  
 end
-# pS(x) = SVector(exp(-x), 1.0-exp(-x), 0.0)
-pS(x) = @SVector [exp(-x), 1.0-exp(-x), 0.0]  # λ*τ
-pI(x) = @SVector [0.0, exp(-x), 1.0-exp(-x)]      # μ*τ
-pR(x) = @SVector [1.0-exp(-x), 0.0, exp(-x)]     # ν*τ
+
+function pI(P) 
+    y = exp(-P.μ * P.τ)
+    @SVector [0.0, y, 1.0-y]      # μ*τ
+end 
 
 
+function pR(P) 
+    y = exp(-P.ν * P.τ)
+    @SVector [1.0-y, 0.0, y]     # ν*τ
+end
 
-function κ(P::SIRforward, i, x) # used to be called pi
+# returns probability vector for i-th particle if current state (of all particles) is x
+function κ(P, i, x) 
     if x[i] == _S_
-        pS(P.λ * nr_infected_neighb(x,P.𝒩,i) * P.τ)
+        ninfected = nr_infected_neighb(x, P.𝒩, i)
+        return(pS(P, ninfected))
     elseif x[i] == _I_
-        pI(P.μ * P.τ)
+        return(pI(P))
     elseif x[i] == _R_
-        pR(P.ν * P.τ)
+        return(pR(P))
     end
 end
+
+# backward kernel for one individual (a matrix)
+κ̃(P ,ninfected::Number) = hcat(pS(P, ninfected), pI(P), pR(P))'
+
+
 
 """
     sample_particle(P::SIRforward,i,x,z)
@@ -139,7 +165,7 @@ z: innovation for this step
 """
 function sample_particle(P::SIRforward, i, x, z)
     p = κ(P, i, x)
-    sample𝒳(x[i], z, p)
+    rand𝒳(z, p)  #    sample𝒳(x[i], z, p)
 end
 
 sample(P::SIRforward, x, z) = [sample_particle(P, i, x, z[i]) for i in eachindex(x)]
@@ -149,9 +175,9 @@ sample(P::SIRforward, x, z) = [sample_particle(P, i, x, z[i]) for i in eachindex
 
     sample SIR-process over n time instances, where the first time instance is x0
 """
-function sample_trajectory(P::SIRforward, n_times::Int64, x0) # i would prefer to call this x1 due to indexing, just have time steps 1:n_times (inclusive)
-    X = [x0]
-    n_particles = length(x0)
+function sample_trajectory(P::SIRforward, n_times::Int64, x1) 
+    X = [x1]
+    n_particles = length(x1)
     for j in 2:n_times
         z = rand(n_particles)
         push!(X, sample(P, X[j-1], z))
@@ -168,102 +194,3 @@ end
 obs2matrix(X) =  [ind(X[j][i]) for j in eachindex(X), i in eachindex(X[1])]
 
 
-
-# convention:
-# k indexes segments k ∈ 1...n_times-1
-# j indexes time on a segment j ∈ 1...J
-# i indexes person i ∈ 1...n
-
-
-function sir_inference(Xobs, P, J; ρ = 0.99, propσ = 0.1,
-    ITER = 100, skip_print = 10,
-    prior =(Exponential(1.0), Exponential(1.0), Exponential(1.0)),
-    γ = 0.5, adaptmax = div(1*ITER,3))
-
-    θ = params(P)
-    θθ = [θ]
-    n_times = length(Xobs)
-    n_particles = length(Xobs[1])
-
-    X = [ [[_S_ for  i in 1:n] for j in 1:J] for _ in 2:n_times]
-
-    # ninfected = 2mean(obs2matrix(Xobs).==ind(_I_))
-    # N = [ [[ninfected for  i in 1:n] for j in 1:J] for k in 2:n_times]
-
-
-    N = [ [[float.(nr_infected_neighb(Xobs[k],P.𝒩,i)) for  i in 1:n] for j in 1:J] for k in 2:n_times]
-    Q = [ [[SMatrix{3,3}(1.0I) for  i in 1:n] for j in 1:J] for _ in 2:n_times]
-    h̃!(Q,θ,N,P.τ)
-
-    lr = zeros(n_times-1)
-    Z = [[rand(n) for _ in 1:J-1] for _ in 1:n_times]
-    for k in 2:n_times
-        _, lr[k-1] = sample_segment!(P, X[k-1], Xobs[k-1], Xobs[k], Z[k-1], Q[k-1], J)
-    end
-
-
-    Xinit = deepcopy(X) # save
-    Xmid = 0            # save middle iteration
-    Xᵒ = deepcopy(X)
-    Zᵒ = deepcopy(Z)
-    Pᵒ = deepcopy(P)
-    lrᵒ = deepcopy(lr)
-
-    acc = 0
-    accpar = fill(0,3)
-    difflr = Float64[]
-
-    for it in 2:ITER
-        X, Xᵒ, lr, lrᵒ, P, Pᵒ = updatepars!(P, Pᵒ, X, Xᵒ, lr, lrᵒ, Xobs,Z,Q,propσ,prior,accpar,it,skip_print)
-        θ = params(P)
-        push!(θθ, θ)
-
-        # recompute likelihood under the auxiliary process with updated θ
-        h̃!(Q, θ, N, P.τ)
-        for k in 1:n_times-1
-            X[k], lr[k] = sample_segment!(P, X[k], Xobs[k], Xobs[k+1], Z[k], Q[k],J)
-        end
-
-        # update innovations Z
-        for k in 1:n_times-1
-            Znew = [randn(n) for _ in 1:J-1]
-            Zᵒ[k] = [mod.(Z[k][j] + (1.0-ρ)*Znew[j], 1) for j in eachindex(Z[1])]
-            Xᵒ[k], lrᵒ[k] = sample_segment!(P, Xᵒ[k], Xobs[k], Xobs[k+1], Zᵒ[k], Q[k], J)
-            Δlr = lrᵒ[k] - lr[k]
-            push!(difflr, Δlr)
-            if log(rand()) < Δlr
-                acc += 1
-                X[k] = Xᵒ[k]
-                Z[k] = Zᵒ[k]
-                lr[k] = lrᵒ[k]
-            end
-            if (mod(it, skip_print)==0) & (k==1)
-                println("iteration ", it   ,"   diff loglr ", Δlr)
-                println("----------")
-             end
-        end
-
-        #    update N
-        # if adaptmin < it < adaptmax
-        #     for k in 1:n_times-1
-        #         N_ =  [[adaptfrac*ninfected + (1-adaptfrac)*nr_infected_neighb(X[k][j], P.𝒩, i) for  i in 1:n] for j in 1:J]
-        #         N[k] = N_/it + (it/(it+1))*  N[k]
-        #     end
-        #     h̃!(Q,θ,N,P.τ)
-        # end
-        if it < adaptmax
-
-                N_ = [  [[float.(nr_infected_neighb(X[k][j], P.𝒩, i)) for  i in 1:n] for j in 1:J] for k in 1:n_times-1]
-                #N = [ [[float.(nr_infected_neighb(Xobs[k],P.𝒩,i)) for  i in 1:n] for j in 1:J] for k in 2:n_times]
-                N .= γ * N + (1-γ) * N_
-
-            h̃!(Q,θ,N,P.τ)
-        end
-
-        if it==div(ITER,2)
-            Xmid = deepcopy(X)
-        end
-#        println(Xmid)
-    end
-    θθ, X, N, Q, Xinit, Xmid, sum(acc)/(n_times*ITER), sum.(accpar)/ITER, difflr
-end

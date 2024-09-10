@@ -17,7 +17,7 @@ function update!(Zᵒ, Z, δ, block)
 end
 
 
-function mcmc(P::SIRguided, Π, blocks;  δ = 0.1, γ = 0.7,
+function mcmc(P::SIRguided, Π, Z, blocks;  δ = 0.1, γ = 0.7,
      acc = 0, ITER = 100, adaptmax=1000,
      par_estimation = true,
      propσ = 0.1,
@@ -30,7 +30,7 @@ function mcmc(P::SIRguided, Π, blocks;  δ = 0.1, γ = 0.7,
     n_blocks = length(blocks)
 
     B = backward(P)
-    Z = innovations(n_times, n_particles)
+    #Z = innovations(n_times, n_particles)
     Zᵒ = deepcopy(Z)
     X, ll  = forward(P, Π, B, Z)
     Xᵒ = deepcopy(X)

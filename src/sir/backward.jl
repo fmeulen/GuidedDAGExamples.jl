@@ -16,8 +16,6 @@ function fuse!(O::Observation, h)
     end
 end
 
-# backward kernel for one individual
-κ̃(P::SIRguided ,ninfected::Number) = hcat(pS(P.λ * P.τ * ninfected), pI(P.μ*P.τ), pR(P.ν*P.τ))'
 
 """
     pullback!(h, ninfected, P::SIRguided)

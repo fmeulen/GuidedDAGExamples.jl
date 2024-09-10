@@ -30,9 +30,8 @@ using Plots
 # end
 
 
-
-include("createdata.jl")
 include("funcdefs.jl")
+include("createdata.jl")
 include("backward.jl")
 include("forward.jl")
 include("mcmc.jl")
@@ -167,8 +166,8 @@ n_blocks= n_times ÷ blocksize
 blocks = make_partition(n_times, n_blocks)
 #blocks = [1:1, 2:5, 6:n_particles]
 
-
-Xs, lls, θs, P = mcmc(P, Π, blocks; δ=0.05,
+Z = innovations(n_times, n_particles)
+Xs, lls, θs, P = mcmc(P, Π, Z, blocks; δ=0.05,
                 ITER=3000,
                 adaptmax= 1000,
                 par_estimation=true, 

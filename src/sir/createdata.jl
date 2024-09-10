@@ -4,6 +4,19 @@
     x           # values at all times (latent = _L_)
 end
 
+function observationmessage(x::State)
+    if x==_S_
+        return(SA_F64[1, 0, 0])
+    elseif x==_I_
+        return(SA_F64[0, 1, 0])
+    elseif x==_R_
+        return(SA_F64[0, 0, 1])
+    else
+        return(SA_F64[1, 1, 1])
+    end
+end
+
+
 function create_data(Xtrue, samplesize, n_times, n_particles, O)
     nrobs_at_each_time = rand(Multinomial(samplesize, n_times))  
     ind_obs = Vector{Int64}[]
