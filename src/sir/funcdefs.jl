@@ -26,6 +26,8 @@ end
     O::SMatrix{3, 3, Float64, 9} 
 end
 
+SIRguided(P::SIRforward, ℐ, 𝒪, O) = SIRguided(P.ξ, P.λ , P.μ, P.ν, P.τ, P.𝒩, ℐ, 𝒪, O)
+
 param(P::SIRguided) = (λ=P.λ, μ=P.μ, ν=P.ν)
 
 @enum State::UInt8 _S_=1 _I_=2 _R_=3 _L_=0

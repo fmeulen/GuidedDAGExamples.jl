@@ -35,16 +35,16 @@ end
 
     h: is a vector of Svectors of length 3
     each element gets mutated such that its elements sum to one
-    sum of all log normalisation constants is returned
+ #   sum of all log normalisation constants is returned
 """
 function normalize!(h)
-    s = 0.0
+  #  s = 0.0
     for i in eachindex(h)
         si = sum(h[i])
         h[i] = h[i]/si
-        s += log(si)
+   #     s += log(si)
     end
-    s
+   # s
 end
 
 """

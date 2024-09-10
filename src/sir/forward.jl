@@ -26,7 +26,7 @@ end
 
 
 """
-    function forward(P::SIRguided, Π, B, Z, logw)
+    function forward(P::SIRguided, Π, B, Z)
 
     simulate guided process using prior Π on the initial state (indexed by "1")
 
@@ -73,8 +73,6 @@ function forward!(X, P::SIRguided, Π, B, Z)
     end
     loglikelihood(X, Π, B, 𝒪, O)
 end
-
-
 
 
 # separate function to compute the logweight

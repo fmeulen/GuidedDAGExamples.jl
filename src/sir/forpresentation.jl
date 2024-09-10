@@ -120,7 +120,8 @@ Xobs_flat = vcat(Xobs...)
 frac_infected_observed = sum(Xobs_flat .== _I_)/(length(Xobs_flat) - sum(Xobs_flat .== _L_))
 ℐ = [fill(frac_infected_observed, n_particles) for _ ∈ 1:n_times] # of course these obs schemes use some bias but fine if only first step
 
-P = SIRguided(Ptrue.ξ, Ptrue.λ ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ, 𝒪, O)
+
+P = SIRguided(Ptrue, ℐ, 𝒪, O) 
 
 # sample guided process 
 Random.seed!(58) 
