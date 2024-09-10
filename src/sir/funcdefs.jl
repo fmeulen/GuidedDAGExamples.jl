@@ -194,3 +194,37 @@ end
 obs2matrix(X) =  [ind(X[j][i]) for j in eachindex(X), i in eachindex(X[1])]
 
 
+# Define a custom show method for SIRforward
+function Base.show(io::IO, m::SIRforward)
+    println(io, "SIRforward Process:")
+    println(io, "  ξ (1-ξ is probability of new exogeneous infection): ", m.ξ)
+    println(io, "  λ (infection rate): ", m.λ)
+    println(io, "  μ (recovery rate): ", m.μ)
+    println(io, "  ν (rate to get susceptible again): ", m.ν)
+    println(io, "  τ (discretisation time step): ", m.τ)
+    println(io, "  𝒩 (neighbors list): ")
+    for (i, neighbors) in enumerate(m.𝒩)
+        println(io, "    Neighbor $i: ", neighbors)
+    end
+end
+
+# Define a custom show method for SIRguided
+function Base.show(io::IO, m::SIRguided{T, S}) where {T, S}
+    println(io, "SIRguided Process:")
+    println(io, "  ξ (1-ξ is probability of new exogeneous infection): ", m.ξ)
+    println(io, "  λ (infection rate): ", m.λ)
+    println(io, "  μ (recovery rate): ", m.μ)
+    println(io, "  ν (rate to get susceptible again): ", m.ν)
+    println(io, "  τ (discretisation time step): ", m.τ)
+    println(io, "𝒩, ℐ, 𝒪 and O not displayed")
+    #println(io, "  𝒩 (neighbors structure): ")
+    # for (i, neighbors) in enumerate(m.𝒩)
+    #     println(io, "    Neighbor $i: ", neighbors)
+    # end
+    # println(io, "  ℐ (infected neighbors at each time not displayed) ")
+    # for (i, infected_neighbors) in enumerate(m.ℐ)
+    #     println(io, "    Time $i: ", infected_neighbors)
+    # end
+    # println(io, "  𝒪 (some vector): ", m.𝒪)
+    # println(io, "  O (3x3 SMatrix): \n", m.O)
+end

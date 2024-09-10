@@ -4,6 +4,15 @@
     x           # values at all times (latent = _L_)
 end
 
+# Define a custom show method for Observation
+function Base.show(io::IO, m::Observation)
+    println(io, "Observation Data:")
+    println(io, "  ind (indices of observed particles): ", m.ind)
+    println(io, "  h (corresponding h-vectors): ", m.h)
+    println(io, "  x (values at all times, latent = _L_): ", m.x)
+end
+
+
 function observationmessage(x::State)
     if x==_S_
         return(SA_F64[1, 0, 0])
@@ -42,9 +51,3 @@ function create_data(Xtrue, samplesize, n_times, n_particles, O)
     [Observation(ind_obs[t], h[t], Xobs[t]) for t in 1:n_times]
 end
 
-
-# function show(::Observation, 𝒪)
-#     for x in 𝒪 
-#         println(x.ind)
-#     end
-# end

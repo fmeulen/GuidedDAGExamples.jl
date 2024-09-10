@@ -277,6 +277,14 @@ Xs, lls, θs, P, anim  = mcmc_with_animation(P, Π, Zbest, blocks; δ=0.2,
                 printskip=5) ;  
 plot(pforward,plotpath(Xs[end]),pobs, layout=lo)
 
+lo = @layout [a;b;c;d]
+λs = getindex.(θs,:λ);
+μs = getindex.(θs,:μ);
+νs = getindex.(θs,:ν);
+plot(plot(lls), plot(λs, title="λ", label=""),
+                plot(μs, title="μ", label=""),
+                plot(νs, title="ν", label=""),
+                layout=lo, size=(400, 600))
 
 
 
