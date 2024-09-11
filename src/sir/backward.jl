@@ -91,17 +91,16 @@ count_infections(X, 𝒩) = [count_infections_at_t(x, 𝒩)  for x ∈ X]
     backward(P::SIRguided)
 
     Returns backward information filter using diagonalisation
-
-    Additionally returns log likelihood contribution induced
-    by normalisation (backw filtering to root node using prior Π is not
-    included)
+    It assumes that the messages from the leaves have already been computed and stored in 𝒪
+    
 """
 function backward(P::SIRguided)
-    @unpack 𝒪, O = P
+    @unpack 𝒪 = P
     n_times = length(𝒪)
     n_particles = length(𝒪[1].x)
     
-    h = fill(SA_F64[1, 1, 1], n_particles) #start with uniforms (should this be normalised?)
+    U = SA_F64[1, 1, 1]/3.0
+    h = fill(U, n_particles)            #start with uniforms 
     fuse!(𝒪[n_times], h)                 # fuse in obs at time T ( == n_times)
     B = [copy(h)]                        # save guiding h in B array
     for t in n_times-1:-1:1              # for t = T-1 back to 1 do:

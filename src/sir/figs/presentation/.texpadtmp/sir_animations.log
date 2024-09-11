@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.11.27)  9 SEP 2024 16:27
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.11.27)  11 SEP 2024 12:53
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -859,14 +859,22 @@ Package pdftex.def Info: large_example_faster_susceptible8.png  used on input li
  [25
 
  <./large_example_faster_susceptible8.png>]
-<large_example_forw_and_observe.png, id=679, 602.25pt x 401.5pt>
-File: large_example_forw_and_observe.png Graphic file (type png)
-<use large_example_forw_and_observe.png>
-Package pdftex.def Info: large_example_forw_and_observe.png  used on input line 75.
+<large_example_forw_and_observe1.png, id=679, 602.25pt x 401.5pt>
+File: large_example_forw_and_observe1.png Graphic file (type png)
+<use large_example_forw_and_observe1.png>
+Package pdftex.def Info: large_example_forw_and_observe1.png  used on input line 75.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
  [26
 
- <./large_example_forw_and_observe.png>] [27
+ <./large_example_forw_and_observe1.png>]
+<large_example_forw_and_observe2.png, id=705, 602.25pt x 401.5pt>
+File: large_example_forw_and_observe2.png Graphic file (type png)
+<use large_example_forw_and_observe2.png>
+Package pdftex.def Info: large_example_forw_and_observe2.png  used on input line 75.
+(pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
+ [27
+
+ <./large_example_forw_and_observe2.png>] [28
 
 ]
 \tf@nav=\write6
@@ -887,18 +895,18 @@ Package rerunfilecheck Info: File `sir_animations.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 17859 strings out of 480608
- 344365 string characters out of 5903629
+ 17867 strings out of 480608
+ 344619 string characters out of 5903629
  585568 words of memory out of 5000000
- 33243 multiletter control sequences out of 15000+600000
+ 33248 multiletter control sequences out of 15000+600000
  539088 words of font info for 48 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  58i,14n,67p,781b,551s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/local/texlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></usr/local/texlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmss12.pfb></usr/local/texlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></usr/local/texlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2020/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb>
-Output written on /Users/frankvandermeulen/.julia/dev/GuidedDAGExamples.jl/src/sir/figs/presentation/.texpadtmp/sir_animations.pdf (27 pages, 276929 bytes).
+Output written on /Users/frankvandermeulen/.julia/dev/GuidedDAGExamples.jl/src/sir/figs/presentation/.texpadtmp/sir_animations.pdf (28 pages, 308054 bytes).
 PDF statistics:
- 762 PDF objects out of 1000 (max. 8388607)
- 691 compressed objects within 7 object streams
- 55 named destinations out of 1000 (max. 500000)
- 163 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 789 PDF objects out of 1000 (max. 8388607)
+ 715 compressed objects within 8 object streams
+ 57 named destinations out of 1000 (max. 500000)
+ 168 words of extra memory for PDF output out of 10000 (max. 10000000)
 

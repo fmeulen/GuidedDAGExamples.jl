@@ -95,40 +95,56 @@ end
 ## some plots of observations
 
 # set observation scheme
-
 O = SA[1.0-δobs δobs/2.0 δobs/2.0; δobs/2.0 1.0- δobs δobs/2.0; δobs/2.0 δobs/2.0 1-δobs]
 
-samplesize = (n_times * n_particles)÷10   #20
 
-Random.seed!(6) # nice!!
-Random.seed!(666)
+
+Random.seed!(666) # nice!!
+
+# In the followoing, Omessages determines the message sent from observations
+# δ = 0.01 # in the guided process assume some noise 
+# Omessages = SA[1.0-δ δ/2.0 δ/2.0; δ/2.0 1.0- δ δ/2.0; δ/2.0 δ/2.0 1-δ]
+
 Xtrue = sample_trajectory(Ptrue::SIRforward, n_times, x0)
+
+samplesize = (n_times * n_particles)÷10   #20
 𝒪 = create_data(Xtrue, samplesize, n_times, n_particles, O)
-Xobs = [O.x for O in 𝒪]
+
+obs_times = 10:10:100
+𝒪2 = create_data_regular(Xtrue, obs_times, n_times, n_particles, O)
+
+obs_particles = 5:7:n_particles 
+𝒪3 = create_data_see_some_particles(Xtrue, obs_particles, n_times, n_particles, O)
+
+#
 
 
 # visualise
 lo = @layout [a;b]
 pforward = plotpath(Xtrue;name="True, unobserved")
-pobs = plotpath(Xobs;name="What we observe")
-pp = plot(pforward, pobs, layout=lo)#,size=(400,400))
-png(pp,  presfigdir*"/large_example_forw_and_observe.png")
+pobs = plotpath(𝒪;name="What we observe")
+pp = plot(pforward, pobs, layout=lo)
+png(pp,  presfigdir*"/large_example_forw_and_observe1.png")
+
+pobs2 = plotpath(𝒪2;name="What we observe")
+pp = plot(pforward, pobs2, layout=lo)
+png(pp,  presfigdir*"/large_example_forw_and_observe2.png")
+
+
 
 ###############################################################
-# set guided process
-Xobs_flat = vcat(Xobs...)
-frac_infected_observed = sum(Xobs_flat .== _I_)/(length(Xobs_flat) - sum(Xobs_flat .== _L_))
-ℐ = [fill(frac_infected_observed, n_particles) for _ ∈ 1:n_times] # of course these obs schemes use some bias but fine if only first step
-
-
-P = SIRguided(Ptrue, ℐ, 𝒪, O) 
-
-# sample guided process 
 Random.seed!(58) 
 
-
-Π = [SA_F64[0.95, 0.05, 0.0] for _ in 1:n_particles]
+# set guided process
+𝒪 = 𝒪2
+pobs = plotpath(𝒪;name="What we observe")
+ℐ =  initialise_infected_neighbours(𝒪)
+P = SIRguided(Ptrue, ℐ, 𝒪, O) 
+Π = [SA_F64[0.96, 0.04, 0.0] for _ in 1:n_particles]
 B = backward(P);
+
+
+# sample guided process 
 Z = innovations(n_times, n_particles)
 Xguided, ll  = forward(P, Π, B, Z);
 ll_rounded = round(ll; digits=1)
@@ -178,12 +194,11 @@ function mcmc_with_animation(P::SIRguided, Π, Z, blocks;  δ = 0.1, γ = 0.7,
     printskip=5)
     
 
-   @unpack 𝒪 = P
-   n_times, n_particles = length(𝒪), length(𝒪[1].x)
-   n_blocks = length(blocks)
+            #    @unpack 𝒪 = P
+                #    n_times, n_particles = length(𝒪), length(𝒪[1].x)
+            #n_blocks = length(blocks)
 
    B = backward(P)
-   #Z = innovations(n_times, n_particles)
    Zᵒ = deepcopy(Z)
    X, ll  = forward(P, Π, B, Z)
    Xᵒ = deepcopy(X)
@@ -192,33 +207,25 @@ function mcmc_with_animation(P::SIRguided, Π, Z, blocks;  δ = 0.1, γ = 0.7,
    lls = [ll]
    θs = [param(P)]
 
-    anim = @animate   for i in 1:ITER
+    anim = @animate  for i in 1:ITER
        for block in blocks
            update!(Zᵒ, Z, δ, block)
            llᵒ = forward!(Xᵒ, P, Π, B, Zᵒ)
-
            if log(rand()) < llᵒ - ll
                mod(i,printskip)==0 && println(i,"  ",ll,"  ", llᵒ,"  ", llᵒ-ll, "  accepted")
                ll = llᵒ
-               for t ∈ block
-                   for i in 1:n_particles
-                       Z[t][i] = Zᵒ[t][i] # you can just swap the objects by reference i think
-                   end
-               end
-
-               for t in 1:n_times
-                   for i in 1:n_particles
-                       X[t][i] = Xᵒ[t][i]
-                   end
-               end
+               Z[block] .= Zᵒ[block]
+               X .= Xᵒ
                acc += 1
            else
                mod(i,printskip)==0 && println(i, "   ", ll,"  ", llᵒ,"  ", llᵒ-ll, "  rejected")
            end
-           i ÷ 10 == 0 && push!(XX, deepcopy(X))
-           i ÷ 10 == 0 && plotpath(X; name="")
-           push!(lls, ll)
-       end
+        end
+        i ÷ 10 == 0 && push!(XX, deepcopy(X))
+        #i ÷ 10 == 0 && plotpath(X; name="")
+        plotpath(X; name="")
+       
+
        if i < adaptmax && i÷adaptskip==0
            ℐnew = γ * P.ℐ  + (1.0-γ) * count_infections(X, 𝒩)
            @reset P.ℐ = ℐnew
@@ -247,6 +254,7 @@ function mcmc_with_animation(P::SIRguided, Π, Z, blocks;  δ = 0.1, γ = 0.7,
            ll, P, B = updatepar!(Xᵒ, X, Pᵒ, P, Π,  B, Z, ll, logprior_proposalratios)
            push!(θs, param(P))
        end
+       push!(lls, ll)
    end
    @show acc/(ITER*n_blocks)
    XX, lls, θs, P, anim 
@@ -263,17 +271,18 @@ blocks = make_partition(n_times, n_blocks)
 blocks = [1, 2, 3:5, 6:n_times]
 Xs, lls, θs, P, anim  = mcmc_with_animation(P, Π, Zbest, blocks; δ=0.05,
                 ITER=500,
-                adaptmax= 1000,
+                adaptmax= 10,
                 par_estimation=false, 
                 printskip=5) ;  
 
-plot(pforward,plotpath(Xs[end]),pobs, layout=lo)
+plot(pforward,plotpath(Xs[end];name="Final iteration"),pobs, layout=lo)
 
-mp4(anim,presfigdir*"/mcmc_guided.mp4", fps=5)
+mp4(anim,presfigdir*"/mcmc_guided.mp4", fps=20)
 
-Xs, lls, θs, P, anim  = mcmc_with_animation(P, Π, Zbest, blocks; δ=0.2,
+Xs, lls, θs, P, anim  = mcmc_with_animation(P, Π, Zbest, blocks; δ=0.1,
                 ITER=500,
                 adaptmax= 1000,
+                adaptskip = 10,
                 par_estimation=true, 
                 printskip=5) ;  
 plot(pforward,plotpath(Xs[end]),pobs, layout=lo)

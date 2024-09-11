@@ -19,7 +19,7 @@ function backwardEP(P::SIRguided)
     # the following code is taken from SIR.jl
     # https://github.com/fmeulen/BackwardFilteringSIR/blob/main/SIR.jl
 
-    δ = 0.0 # artificial par to become infected without infected neighbours
+    δ = 1.0 - P.ξ  # artificial par to become infected without infected neighbours
     τ = P.τ # discretisation time step of SIR model
 
     statespace = Dict([i => E for i in 1:N])

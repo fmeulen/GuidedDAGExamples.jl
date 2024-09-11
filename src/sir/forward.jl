@@ -12,14 +12,6 @@ function guide!(xnext, xcurrent, P::SIRguided, h, z)
     @assert length(xnext)==length(xcurrent)==length(h)==length(z)
     for i ∈ eachindex(xcurrent)
         p = κ(P, i, xcurrent) .* h[i]
-        # if xcurrent[i]==_S_
-        #     ni = nr_infected_neighb(xcurrent, P.𝒩, i)
-        #     p = pS(P.λ * ni * P.τ) .* h[i] 
-        # elseif xcurrent[i]==_I_
-        #     p = pI(P.μ * P.τ) .* h[i]
-        # elseif xcurrent[i]==_R_
-        #     p = pR(P.ν * P.τ) .* h[i]
-        # end
         xnext[i] = rand𝒳(z[i], p/sum(p))
     end
 end
@@ -53,7 +45,7 @@ function forward(P::SIRguided, Π, B, Z)
         guide!(X, Xs[t-1], P, B[t], Z[t])
         push!(Xs, copy(X))
     end
-    ll = loglikelihood(Xs, Π, B, 𝒪, O)
+    ll = loglikelihood(Xs, Π, B, 𝒪, O) # this must be the 'true' O used in generating the data
     Xs, ll
 end
 

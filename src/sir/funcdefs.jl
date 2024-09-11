@@ -230,3 +230,21 @@ function Base.show(io::IO, m::SIRguided{T, S}) where {T, S}
     # println(io, "  𝒪 (some vector): ", m.𝒪)
     # println(io, "  O (3x3 SMatrix): \n", m.O)
 end
+
+
+
+"""
+    initialise_infected_neighbours(𝒪)
+
+    Very simplest way to guess nr of infected neighbours by simply counting the fraction of infections among all observations
+    Then for any particles and any time, this nr is assigned 
+"""
+function initialise_infected_neighbours(𝒪)
+    n_times = length(𝒪)
+    n_particles= length(𝒪[1].x)
+    Xobs = [O.x for O in 𝒪]
+    Xobs_flat = vcat(Xobs...)
+    frac_infected_observed = sum(Xobs_flat .== _I_)/(length(Xobs_flat) - sum(Xobs_flat .== _L_))
+    [fill(frac_infected_observed, n_particles) for _ ∈ 1:n_times] # of course these obs schemes use some bias but fine if only first step
+end 
+

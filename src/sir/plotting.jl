@@ -62,3 +62,8 @@ function plotpath(X;  name="path")
 end
  
 
+function plotpath(𝒪::Array{Observation{Int64, Array{Int64, 1}, Array{SArray{Tuple{3}, Float64, 1, 3}, 1}, Array{State, 1}}, 1}; name="path")
+    Xobs = [O.x for O in 𝒪]
+    plotpath(Xobs; name=name)
+end
+    
