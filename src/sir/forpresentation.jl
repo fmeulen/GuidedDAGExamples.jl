@@ -185,7 +185,7 @@ plot(pforward, plotpath(Xguidedbest), pobs, layout=lo)
 
 # now do mcmc, write function that also makes multipleguided_animation_unknownpar
 
-function mcmc_with_animation(P::SIRguided, Π, Z, blocks;  δ = 0.1, γ = 0.7,
+function mcmc_with_animation(P::SIRguided, Π, Z, blocks;  δ = 0.1, γ = 0.9,
     acc = 0, ITER = 100, adaptmax=1000,
     par_estimation = false,
     propσ = 0.1,
@@ -238,20 +238,20 @@ function mcmc_with_animation(P::SIRguided, Π, Z, blocks;  δ = 0.1, γ = 0.7,
            μᵒ = P.μ * exp(propσ*randn())
            logprior_proposalratios = (log(μᵒ) - log(P.μ)) + logpdf(prior.μ,μᵒ) - logpdf(prior.μ,P.μ)
            Pᵒ = @set P.μ = μᵒ
-           ll, P, B = updatepar!(Xᵒ, X, Pᵒ, P, Π,  B, Z,  ll, logprior_proposalratios)
+           ll, P = updatepar!(Xᵒ, X, Pᵒ, P, Π,  B, Z,  ll, logprior_proposalratios)
 
            # update λ
            λᵒ = P.λ * exp(propσ*randn())
            logprior_proposalratios = (log(λᵒ) - log(P.λ)) + logpdf(prior.λ,λᵒ) - logpdf(prior.λ,P.λ)
            Pᵒ = @set P.λ = λᵒ
-           ll, P, B = updatepar!(Xᵒ, X, Pᵒ, P, Π,  B, Z,  ll, logprior_proposalratios)
+           ll, P = updatepar!(Xᵒ, X, Pᵒ, P, Π,  B, Z,  ll, logprior_proposalratios)
 
 
            # update ν
            νᵒ = P.ν * exp(propσ*randn())
            logprior_proposalratios = (log(νᵒ) - log(P.ν)) + logpdf(prior.ν,νᵒ) - logpdf(prior.ν,P.ν)
            Pᵒ = @set P.ν = νᵒ
-           ll, P, B = updatepar!(Xᵒ, X, Pᵒ, P, Π,  B, Z, ll, logprior_proposalratios)
+           ll, P = updatepar!(Xᵒ, X, Pᵒ, P, Π,  B, Z, ll, logprior_proposalratios)
            push!(θs, param(P))
        end
        push!(lls, ll)
@@ -268,21 +268,34 @@ end
 blocksize = 10
 n_blocks= n_times ÷ blocksize
 blocks = make_partition(n_times, n_blocks)
-blocks = [1, 2, 3:5, 6:n_times]
-Xs, lls, θs, P, anim  = mcmc_with_animation(P, Π, Zbest, blocks; δ=0.05,
-                ITER=500,
-                adaptmax= 10,
+#blocks = [1, 2, 3:5, 6:n_times]
+Xs, lls, θs, Pout, anim  = mcmc_with_animation(P, Π, Zbest, blocks; δ=0.005,
+                ITER=200,
+                γ=0.8,
+                adaptmax= 200,
+                adaptskip=10,
                 par_estimation=false, 
-                printskip=5) ;  
+                printskip=1) ;  
+
+
 
 plot(pforward,plotpath(Xs[end];name="Final iteration"),pobs, layout=lo)
+plot_infections(Xs[end], 𝒩)
 
 mp4(anim,presfigdir*"/mcmc_guided.mp4", fps=20)
 
-Xs, lls, θs, P, anim  = mcmc_with_animation(P, Π, Zbest, blocks; δ=0.1,
-                ITER=500,
+# with parameter par_estimation
+
+Pinit = @set Ptrue.λ = 2.0
+P = SIRguided(Pinit, ℐ, 𝒪, O) 
+
+
+
+Xs, lls, θs, Pout, anim  = mcmc_with_animation(P, Π, Zbest, blocks; δ=0.005,
+                ITER=200,
                 adaptmax= 1000,
-                adaptskip = 10,
+                adaptskip = 20,
+                propσ=0.02,
                 par_estimation=true, 
                 printskip=5) ;  
 plot(pforward,plotpath(Xs[end]),pobs, layout=lo)
@@ -304,53 +317,3 @@ plot(plot(lls), plot(λs, title="λ", label=""),
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-# with the best path, update the guess for infected neighbours
-ℐ = count_infections(Xguidedbest, 𝒩)
-P2 = SIRguided(1.0, Ptrue.λ ,  Ptrue.μ, Ptrue.ν, Ptrue.τ, Ptrue.𝒩, ℐ, 𝒪, O)
-
-B2 = backward(P2)
-Xguidedbest2, llbest2 = forward(P2, Π, B2, Zbest)
-plot(pforward, plotpath(Xguidedbest2), layout=lo)
-
-plot(pforward, plotpath(Xguidedbest), plotpath(Xguidedbest2))
-
-plot(pforward, heatmap(obs2matrix(ℐ)', title="nr infected neighbours"))
-
-
-
-
-
-
-
-
-
-# now do the same but with parameters sampled from their prior
-
-
-# sample multiple guided processes
-prior = (μ=Exponential(5.0), λ = Exponential(5.0), ν=Exponential(5.0))
-anim5 = @animate for i in 1:30
-    λ, μ, ν = rand(prior.λ), rand(prior.μ), rand(prior.ν)
-    P = SIRguided(Ptrue.ξ, λ ,  μ, ν, Ptrue.τ, Ptrue.𝒩, ℐ, 𝒪, O)
-    B = backward(P)
-    Z = innovations(n_times, n_particles)
-    Xguided, ll  = forward(P, Π, B, Z);
-    lll =  round(ll; digits=1)
-    pguided = plotpath(Xguided; name="Reconstructed. $lll")
-
-    pp = plot(pforward, pguided, layout=lo)
-    pp
-end
-mp4(anim5,presfigdir*"/multipleguided_animation_unknownpar.mp4", fps=1)

@@ -102,7 +102,7 @@ end
 
 
 function updatepar!(Xᵒ, X, Pᵒ, P, Π, B, Z, ll, logprior_proposalratios)
-    @unpack 𝒪 = P
+    #@unpack 𝒪 = P
     Bᵒ = backward(Pᵒ)
     llᵒ = forward!(Xᵒ, Pᵒ, Π, Bᵒ, Z)
 
@@ -110,12 +110,14 @@ function updatepar!(Xᵒ, X, Pᵒ, P, Π, B, Z, ll, logprior_proposalratios)
     if log(rand()) < logA
         ll = llᵒ
         P = Pᵒ
-        B, Bᵒ = Bᵒ, B
-        for t in eachindex(X)
-            for i in eachindex(X[t])
-               X[t][i] = Xᵒ[t][i]
-            end
-        end
-    end
-    ll, P, B
+    #     B, Bᵒ = Bᵒ, B
+    #     for t in eachindex(X)
+    #         for i in eachindex(X[t])
+    #            X[t][i] = Xᵒ[t][i]
+    #         end
+    #     end
+        X .= Xᵒ
+        B .= Bᵒ
+     end
+    ll, P
 end
