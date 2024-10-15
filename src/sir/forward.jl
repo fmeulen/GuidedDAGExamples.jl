@@ -18,7 +18,7 @@ end
 
 
 """
-    function forward(P::SIRguided, Π, B, Z)
+    function forward(P::SIRguided, Π, B, Z, prior)
 
     simulate guided process using prior Π on the initial state (indexed by "1")
 
@@ -27,9 +27,9 @@ end
 
     Z contains innovations (random numbers for simulating the guided process)
 
-    returns simulated path and loglikelihood
+    returns simulated path and loglikelihood + logprior
 """
-function forward(P::SIRguided, Π, B, Z)
+function forward(P::SIRguided, Π, B, Z, prior)
     @unpack 𝒪, O = P
     n_steps, n_particles = length(Z), length(Π)
 
@@ -46,11 +46,11 @@ function forward(P::SIRguided, Π, B, Z)
         push!(Xs, copy(X))
     end
     ll = loglikelihood(Xs, Π, B, 𝒪, O) # this must be the 'true' O used in generating the data
-    Xs, ll
+    Xs, ll + logprior(P, prior)
 end
 
 # in place version
-function forward!(X, P::SIRguided, Π, B, Z)
+function forward!(X, P::SIRguided, Π, B, Z, prior)
     @unpack 𝒪, O = P
     n_steps, n_particles = length(Z), length(Π)
 
@@ -63,7 +63,7 @@ function forward!(X, P::SIRguided, Π, B, Z)
     for t in 2:n_steps
         guide!(X[t], X[t-1], P, B[t], Z[t])
     end
-    loglikelihood(X, Π, B, 𝒪, O)
+    loglikelihood(X, Π, B, 𝒪, O) + logprior(P, prior)
 end
 
 
@@ -115,8 +115,9 @@ function loglikelihood(Xs, Π, B, 𝒪, O)
             ll += log(O[ ind(xtk) , ind(observation)]) # ind is a function that converts S,I,R to 1,2,3
         end
     end
-    ll
+    ll 
 end
 
 
 
+logprior(P, prior) = logpdf(prior.μ, P.μ) + logpdf(prior.λ, P.λ) + logpdf(prior.ν, P.ν)

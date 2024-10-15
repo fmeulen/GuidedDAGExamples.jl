@@ -112,3 +112,21 @@ function backward(P::SIRguided)
     end
     B
 end
+
+
+function backward!(B, P::SIRguided)
+    @unpack 𝒪 = P
+    n_times = length(𝒪)
+    n_particles = length(𝒪[1].x)
+    
+    U = SA_F64[1, 1, 1]/3.0
+    h = fill(U, n_particles)            #start with uniforms 
+    fuse!(𝒪[n_times], h)                 # fuse in obs at time T ( == n_times)
+    B[n_times] .= h                   # save guiding h in B array
+    for t in n_times-1:-1:1              # for t = T-1 back to 1 do:
+        pullback!(h, P.ℐ[t], P)          # pullback with h_{t+1} and 'known' nr. Infected at time t
+        fuse!(𝒪[t], h)                   # fuse pullback h_t with obs_t
+        normalize!(h)               # normalise
+        B[t] .= h        # save guiding h in Barray
+    end
+end

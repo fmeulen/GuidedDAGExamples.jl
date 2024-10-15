@@ -67,8 +67,8 @@ function plotpath(𝒪::Array{Observation{Int64, Array{Int64, 1}, Array{SArray{T
     plotpath(Xobs; name=name)
 end
     
-function plot_infections(X, 𝒩)
+function plot_infections(X, 𝒩;name="")
     my_palette = ["#440154", "#3b528b", "#21918c", "#5ec962", "#fde725"]
     aa=count_infections(X, 𝒩)
-    heatmap(hcat([a for a in aa]...), color=my_palette)
+    heatmap(hcat([a for a in aa]...), color=my_palette,title=name)
 end
