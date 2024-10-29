@@ -239,12 +239,19 @@ end
     Very simplest way to guess nr of infected neighbours by simply counting the fraction of infections among all observations
     Then for any particles and any time, this nr is assigned 
 """
-function initialise_infected_neighbours(𝒪)
+function initialise_infected_neighbours(𝒪; frac_base = 0.01)
     n_times = length(𝒪)
     n_particles= length(𝒪[1].x)
-    Xobs = [O.x for O in 𝒪]
-    Xobs_flat = vcat(Xobs...)
-    frac_infected_observed = sum(Xobs_flat .== _I_)/(length(Xobs_flat) - sum(Xobs_flat .== _L_))
+ #   Xobs = [O.x for O in 𝒪]
+ #   Xobs_flat = vcat(Xobs...)
+ #   suminfected = sum(Xobs_flat .== _I_)
+ #   if suminfected==length(Xobs_flat) # this means no infected in the observations
+ #       frac_infected_observed = frac_base
+ #   else
+ #       frac_infected_observed = suminfected /(length(Xobs_flat) - suminfected)
+ #   end
+    frac_infected_observed_ = map(i -> mean(𝒪[i].x .== _I_), 1:length(𝒪))  # compute first for each time
+    frac_infected_observed = max.(mean(frac_infected_observed_), frac_base)
     [fill(frac_infected_observed, n_particles) for _ ∈ 1:n_times] # of course these obs schemes use some bias but fine if only first step
 end 
 

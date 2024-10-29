@@ -118,7 +118,8 @@ end
 # set observation scheme
 O = SA[1.0-δobs δobs/2.0 δobs/2.0; δobs/2.0 1.0- δobs δobs/2.0; δobs/2.0 δobs/2.0 1-δobs]
 
-
+##### temporary, set n_times to smaller value
+n_times = 100
 
 Random.seed!(666) # nice!!
 
@@ -131,7 +132,8 @@ Xtrue = sample_trajectory(Ptrue::SIRforward, n_times, x0)
 samplesize = (n_times * n_particles)÷10   #20
 𝒪 = create_data(Xtrue, samplesize, n_times, n_particles, Omessages)
 
-obs_times = 10:10:n_times
+#obs_times = 10:10:n_times  ## adjusted temporary!
+obs_times = [10, 30,40,60,75,100]
 𝒪2 = create_data_regular(Xtrue, obs_times, n_times, n_particles, O)
 
 obs_particles = 5:7:n_particles 
@@ -204,6 +206,10 @@ Xguidedbest, llbest = forward(P, Π, B, Zbest, prior)
 lo = @layout [a;b;c]
 plot(pforward, plotpath(Xguidedbest), pobs, layout=lo)
 
+
+# perhaps do smc lagged filtering from here?
+
+
 # now do mcmc, write function that also makes multipleguided_animation_unknownpar
 
 ##--------------- Next we take a really large example
@@ -257,6 +263,7 @@ function mcmc_with_animation(P::SIRguided, Π, Z, prior, blocks;  δ = 0.1, γ =
     Xᵒ = deepcopy(X)
     Bᵒ = deepcopy(B)
     XX = [copy(X)]
+    ZZ = [copy(Z)]
     lls = [ll]
     θs = [param(P)]
 
@@ -264,8 +271,11 @@ function mcmc_with_animation(P::SIRguided, Π, Z, prior, blocks;  δ = 0.1, γ =
     anim = @animate  for i in 1:ITER
         ll, Z, Zᵒ, X, Xᵒ, acc_ = mcmc_iteration!(P, Π, Z, Zᵒ, X, Xᵒ, B, ll, prior, blocks, δ, i, printskip)
         acc += acc_
-    acc_ = 0
-        i ÷ 10 == 0 && push!(XX, deepcopy(X))
+        acc_ = 0
+        #if i ÷ 10 == 0
+             push!(XX, deepcopy(X))
+             push!(ZZ, deepcopy(Z))
+        #end
         plotpath(X; name="")
 
         # adapt nr of infections in guided proposal
@@ -287,7 +297,7 @@ function mcmc_with_animation(P::SIRguided, Π, Z, prior, blocks;  δ = 0.1, γ =
        push!(lls, ll)
    end
    @show acc/(ITER*n_blocks)
-   XX, lls, θs, P, anim 
+   XX, ZZ, lls, θs, P, anim 
 end
 
 
@@ -295,17 +305,17 @@ end
 
 
 
-blocksize = 50
+blocksize = 10
 n_blocks= n_times ÷ blocksize
 blocks = make_partition(n_times, n_blocks)
-blocks = [1, 2, 3:5, 6:n_times]
-Xs, lls, θs, Pout, anim  = mcmc_with_animation(P, Π, Z, prior, blocks; δ=0.005,
+#blocks = [1, 2, 3:5, 6:n_times]
+Xs, Zs, lls, θs, Pout, anim  = mcmc_with_animation(P, Π, Z, prior, blocks; δ=0.01,
                 ITER=1500,
                 γ=0.8,
                 adaptmax= 00,
                 adaptskip=10,
                 par_estimation=false, 
-                printskip=1) ;  
+                printskip=10) ;  
 
 plot(lls)
 
@@ -315,13 +325,26 @@ plot_infections(Xs[end], 𝒩)
 
 mp4(anim,presfigdir*"/mcmc_guided.mp4", fps=20)
 
+# what happens to innovations Z?
+animZ = @animate for i in eachindex(Zs)
+    heatmap(hcat([a for a in Zs[i]]...))
+end
+
+mp4(animZ,presfigdir*"/mcmc_guided_Z.mp4", fps=20)
+
+# check Cov in Z
+aa=[vcat(Zs[i]...) for i in eachindex(Zs)]
+aaa = hcat(aa...)'
+heatmap(cov(aaa))
+
+
 # with parameter par_estimation
 
 Pinit = @set Ptrue.μ = 1.0
 Pinit = @set Pinit.ν = 1.5
 P = SIRguided(Pinit, ℐ, 𝒪, O) 
 
-Xs, lls, θs, Pout, anim  = mcmc_with_animation(P, Π, Z, prior, blocks; δ=0.0001,
+Xs, Zs, lls, θs, Pout, anim  = mcmc_with_animation(P, Π, Z, prior, blocks; δ=0.0001,
                 ITER=2000,
                 adaptmax= 100,
                 adaptskip = 0,
@@ -354,9 +377,29 @@ plot(plot(lls), plot(λs[bi:end], title="λ", label=""),
 
 
 
+# Try SMC
+NUMPARTICLES = 100 
+NR_SMC_STEPS = 10
+NR_MOVE_STEPS =0
+printskip = 1000
+δstep = 0.005
 
 
+blocksize = 30
+n_blocks= n_times ÷ blocksize
+blocks = make_partition(n_times, n_blocks)
 
 
+out = smc(NR_SMC_STEPS, NUMPARTICLES, NR_MOVE_STEPS, P, Π, prior, blocks, δstep, printskip)
 
+lo = @layout [a;b;c]
+an = @animate for j in 1:NUMPARTICLES
+    Xj = out.particles[j].X
+    plot(pforward,plotpath(Xj),pobs, layout=lo)
+end
 
+mp4(an,presfigdir*"/smc_guided.mp4", fps=10)
+
+plot(vcat(out.logweights...))
+
+# try the following: have 1000 particles, don't do pcn updates

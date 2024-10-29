@@ -36,7 +36,7 @@ end
     
     plotpath(X)
 """
-function plotpath(X;  name="path") 
+function plotpath(X;  name="path", xlims_=(1,length(X))) 
     M = [X[j][i] for j in eachindex(X), i in eachindex(X[1])]
     M = transpose_state_matrix(M)
 
@@ -57,7 +57,7 @@ function plotpath(X;  name="path")
 
     # Plot the heatmap using the numeric matrix and the custom color palette
     p = heatmap(numeric_matrix, color=color_palette,  clim=(1, 4),title=name,  
-        xlabel="time", ylabel="individual", colorbar=false)
+        xlabel="time", ylabel="individual", colorbar=false, xlims=xlims_)
     p 
 end
  
