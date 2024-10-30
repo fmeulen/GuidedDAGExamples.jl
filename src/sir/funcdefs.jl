@@ -29,6 +29,9 @@ end
 SIRguided(P::SIRforward, ℐ, 𝒪, O) = SIRguided(P.ξ, P.λ , P.μ, P.ν, P.τ, P.𝒩, ℐ, 𝒪, O)
 
 param(P::SIRguided) = (λ=P.λ, μ=P.μ, ν=P.ν)
+nparticles(P::SIRguided) = length(P.𝒩)
+ntimes(P::SIRguided) = length(P.𝒪)
+
 
 @enum State::UInt8 _S_=1 _I_=2 _R_=3 _L_=0
 const 𝒳 = @SVector [_S_,_I_,_R_]
@@ -250,8 +253,13 @@ function initialise_infected_neighbours(𝒪; frac_base = 0.01)
  #   else
  #       frac_infected_observed = suminfected /(length(Xobs_flat) - suminfected)
  #   end
-    frac_infected_observed_ = map(i -> mean(𝒪[i].x .== _I_), 1:length(𝒪))  # compute first for each time
-    frac_infected_observed = max.(mean(frac_infected_observed_), frac_base)
-    [fill(frac_infected_observed, n_particles) for _ ∈ 1:n_times] # of course these obs schemes use some bias but fine if only first step
+    nr_infected_observed = map(i -> sum(𝒪[i].x .== _I_), 1:length(𝒪))  # compute first for each time
+    nr_observed = map(i -> n_particles - sum(𝒪[i].x .== _L_), 1:length(𝒪))
+    if sum(nr_observed) == 0
+        f = frac_base
+    else
+        f= sum(nr_infected_observed)/sum(nr_observed)
+    end
+    [fill(f, n_particles) for _ ∈ 1:n_times] # of course these obs schemes use some bias but fine if only first step
 end 
 
