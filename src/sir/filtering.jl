@@ -19,8 +19,8 @@ function guidedfiltering!(Πloc, P, i0, iT, prior, n_ensemble)
     Ploc = construct_Ploc(P,i0,iT)
     Bloc = backward(Ploc)
 
-    n_times = iT - i0 + 1
-    n_particles = length(P.𝒩)
+    n_times = ntimes(Ploc) #iT - i0 + 1
+    n_particles = nparticles(Ploc) #length(P.𝒩)
     Z = innovations(n_times, n_particles)
     Xᵒ, logweight  = forward(Ploc, Πloc[1], Bloc, Z, prior)
 
@@ -37,22 +37,22 @@ function guidedfiltering!(Πloc, P, i0, iT, prior, n_ensemble)
  #   println("logweights: ", logweights)
 
     # resampling
-    ess_threshold = round(n_ensemble/2; digits=0) 
-    indices = resamp(logweights, ess_threshold) 
-    println(indices, "\n")
-    for i in eachindex(indices)
-        Xs[i] = copy(Xs[indices[i]])
-        logweights[i] = logweights[indices[i]]
-    end
+    # ess_threshold = round(n_ensemble/2; digits=0) 
+    # indices = resamp(logweights, ess_threshold) 
+    # println(indices, "\n")
+    # for i in eachindex(indices)
+    #     Xs[i] = copy(Xs[indices[i]])
+    #     logweights[i] = logweights[indices[i]]
+    # end
     
-    for i in eachindex(Πloc)
-        Πloc[i] = convert_state_to_Π.(Xs[i][end])  # overwrite element i
-    end
+    # for i in eachindex(Πloc)
+    #     Πloc[i] = convert_state_to_Π.(Xs[i][end])  # overwrite element i
+    # end
     Xs, logweights
 end
 
 
-lo = @layout [a;b;c]
+
 
 
 
@@ -65,48 +65,72 @@ n_times = ntimes(P)
 i0, iT = 3, 5
 Xs, logweights =  guidedfiltering!(Πloc, P, i0, iT, prior, n_ensemble);
 
-for j in 1:length(Xs)
-    println("Xs[1] === Xs[$j]: ", Xs[1] === Xs[j])
-end
+# for j in 1:length(Xs)
+#     println("Xs[1] === Xs[$j]: ", Xs[1] === Xs[j])
+# end
 
-function filterall(P, Π, prior, n_ensemble)
+function filterall(P, Π, prior, n_ensemble; ess_threshold = round(n_ensemble/2; digits=0))
     Πloc = [Π for _ in 1:n_ensemble]
-
     i = 2
     i0 = filter_times[i-1] + 1
     iT = filter_times[i]
     𝕏, logweights =  guidedfiltering!(Πloc, P, i0, iT, prior, n_ensemble);
+    # resampling 
+    indices = resamp(logweights, ess_threshold) 
+    println(indices, "\n")
+    for i in eachindex(indices)
+        𝕏[i] = copy(𝕏[indices[i]])
+        logweights[i] = logweights[indices[i]]
+    end
+    # updating Πloc 
+    for i in eachindex(Πloc)
+        Πloc[i] = convert_state_to_Π.(𝕏[i][end])  # overwrite element i
+    end
 
     for i in 3:lastindex(filter_times)
-        println("i=$i, length XXs[1]=", length(XXs[1]))
+        @show i
         i0 = filter_times[i-1] + 1
         iT = filter_times[i]
-        println("i0, iT= $i0, $iT")
-        Ys, logweights =  guidedfiltering!(Πloc, P, i0, iT, prior, n_ensemble);
+        Ys, logweights_ =  guidedfiltering!(Πloc, P, i0, iT, prior, n_ensemble);
         println("Interval [$i0, $iT], Length of Ys[1]: ", length(Ys[1]))
         for j in eachindex(𝕏)
             append!(𝕏[j], Ys[j])
-            println("length of 𝕏[j] ", length(𝕏[j]))
-            #push!(XXs, Ys)
+            #println("length of 𝕏[j] ", length(𝕏[j]))
+        end
+        logweights += logweights_
+         # resampling 
+        indices = resamp(logweights, ess_threshold) 
+        println(indices, "\n")
+        for i in eachindex(indices)
+            𝕏[i] = copy(𝕏[indices[i]])
+            logweights[i] = logweights[indices[i]]
+        end
+        # updating Πloc 
+        for i in eachindex(Πloc)
+            Πloc[i] = convert_state_to_Π.(𝕏[i][end])  # overwrite element i
         end
     end
-    𝕏
+    𝕏, logweights
 end
 
-n_ensemble = 100
-filter_times = [0, 30, 50, 100]
+n_ensemble = 1000
+filter_times = [0, 30, 50, 100] # should include 0
+filter_times =  vcat(0,10:10:100)
 
-𝕏 = filterall(P, Π, prior, n_ensemble);
+𝕏, logweights = filterall(P, Π, prior, n_ensemble);
 [length(𝕏[i]) for i in eachindex(𝕏)]
+plotpath(𝕏[1]; xlims_=(1,n_times))
+plotpath(𝕏[3]; xlims_=(1,n_times))
+plotpath(𝕏[4]; xlims_=(1,n_times))
+
+plot(pforward, plotpath(𝕏[20]), pobs, layout=lo)
 
 anim_smc = @animate for  x ∈ 𝕏
     #plotpath(𝕏[1]; xlims_=(1,n_times))
     plot(pforward, plotpath(x), pobs, layout=lo)
 end
 
-mp4(anim_smc,presfigdir*"/smc_example.mp4", fps=1.5)
+mp4(anim_smc,presfigdir*"/smc_example.mp4", fps=14)
 
-xlims=(1,n_times)
 
-lo = @layout [a;b;c]
-plot(pforward,plotpath(particles[1].X;name="guided"),pobs, layout=lo)
+
