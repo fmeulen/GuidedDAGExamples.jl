@@ -47,12 +47,13 @@ resamp(lw, .2)
 """
 function resamp(lw, ess_threshold)
     w = exp.(lw .- maximum(lw))
+    println(w)
     nw = w/sum(w)
     ess = 1 / sum(nw.^2)
-    println("ess: $ess")
+    println("ESS: $ess")
     #println(ess)
     if ess < ess_threshold
-        println("ess equals: $ess and is below threshold, resampling takes place\n")
+        println("ESS is below threshold, resampling takes place\n")
         return resample(1:length(lw), nw) #SMC.resample(nw)
     else
         return 1:length(lw)

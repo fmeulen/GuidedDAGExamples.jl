@@ -1,7 +1,36 @@
-## make simple plots to explain the dynamics
-ξ = 0.999 # prob 1-ξ of new infection (not from neighbours)
+wd = @__DIR__
+cd(wd)
+
+figdir = mkpath(joinpath(wd,"figs"))
+
+using Distributions
+#PLOT = true
+using LinearAlgebra
+using DataFrames
+using Random
+using StaticArrays
+#using Revise
+using ConcreteStructs
+using StatsBase
+using UnPack
+using Accessors
+using BenchmarkTools
+
+using Plots
+
+
+include("funcdefs.jl")
+include("createdata.jl")
+include("backward.jl")
+include("forward.jl")
+include("mcmc.jl")
+include("partition.jl")
+include("plotting.jl")
+include("filtering.jl")
+
+
+## make simple plots to explain the dynamics, no random numbers
 τ = 0.1 # time step
-δobs = 0.00
 
 prior = (μ=Exponential(5.0), λ = Exponential(5.0), ν=Exponential(5.0))
 
@@ -41,7 +70,7 @@ mp4(anim,presfigdir*"/smallexample.mp4", fps=1.5)
 
 
 
-# now a bigger example 
+## now a bigger example 
 n_particles = 50
 n_times = 100
 size_neighbourhood = 2
@@ -53,14 +82,17 @@ Random.seed!(30)
 𝒩 = set_neighbours(n_particles, size_neighbourhood)
 
 # set true pars
-λ, μ, ν =  4.0, 2.5, 0.5
-Ptrue = SIRforward(ξ, λ, μ, ν, τ, 𝒩)
+ξ, λ, μ, ν = 0.999, 4.0, 2.5, 0.5
+Ptrue1 = SIRforward(ξ, λ, μ, ν, τ, 𝒩)
+
+ξ, λ, μ, ν = 1.0, 4.0, 2.5, 1.5
+Ptrue2 = SIRforward(ξ, λ, μ, ν, τ, 𝒩)
 
 # set initial state
 x0 = vcat(_I_, fill(_S_,n_particles-2),_I_) 
 
-
-X = sample_trajectory(Ptrue::SIRforward, n_times, x0)
+X = sample_trajectory(Ptrue1, n_times, x0)
+plotpath(X)
 anim2a = @animate for i in 1:n_times
     Xpart = latent
     Xpart[1:i] = X[1:i]
@@ -70,12 +102,12 @@ end
 mp4(anim2a,presfigdir*"/large_example.mp4", fps=10)
 
 # What if we would run it for way longer?
-Ptrue = SIRforward(.999, 2.0, 1.0, 0.1, τ, 𝒩) # reduce μ, so stay longer infected, don't get infected easily, reduce λ
+#Ptrue = SIRforward(ξ, 2.0, 1.0, 0.1, τ, 𝒩) # reduce μ, so stay longer infected, don't get infected easily, reduce λ
 n_times_long = 1000
 latent = fill(fill(_L_, n_particles),n_times_long)
 
 Random.seed!(30)
-X = sample_trajectory(Ptrue::SIRforward, n_times_long, x0)
+X = sample_trajectory(Ptrue1, n_times_long, x0)
 plotpath(X)
 anim2a_long = @animate for i in 1:n_times_long
     Xpart = latent
@@ -88,13 +120,11 @@ mp4(anim2a_long,presfigdir*"/large_example_long.mp4", fps=200)
 
 
 # set true pars back to initial settings
-λ, μ, ν =  4.0, 2.5, 0.5
-Ptrue = SIRforward(ξ, λ, μ, ν, τ, 𝒩)
 
 # other realisations
 Random.seed!(2)
 for i in 1:8
-    Xtrue = sample_trajectory(Ptrue::SIRforward, n_times, x0)
+    Xtrue = sample_trajectory(Ptrue1, n_times, x0)
     pforward = plotpath(Xtrue; name="")
     png(pforward, presfigdir*"/large_example$i.png")
 end 
@@ -103,37 +133,49 @@ end
 
 # also when higher rate of getting again susceptbile
 
-Ptrue2 = @set Ptrue.ν = 1.5
-
 Random.seed!(2)
 for i in 1:8
-    Xtrue = sample_trajectory(Ptrue2::SIRforward, n_times, x0)
+    Xtrue = sample_trajectory(Ptrue2, n_times, x0)
     pforward = plotpath(Xtrue; name="")
     png(pforward, presfigdir*"/large_example_faster_susceptible$i.png")
 end 
 
 
-## some plots of observations
+#################### Generating partical observations #################################
 
 # set observation scheme
+case = 2 
+if case==1
+    Ptrue = Ptrue1
+    δobs = 0.0 
+    Random.seed!(666) # nice!!
+end
+if case == 2   
+    Ptrue = Ptrue2
+    δobs = 0.001
+    Random.seed!(79)
+end
+
 O = SA[1.0-δobs δobs/2.0 δobs/2.0; δobs/2.0 1.0- δobs δobs/2.0; δobs/2.0 δobs/2.0 1-δobs]
 
-##### temporary, set n_times to smaller value
-n_times = 100
+# take some more particles 
+n_particles = 100
+𝒩large = set_neighbours(n_particles, size_neighbourhood)
+Ptrue = @set Ptrue.𝒩 = 𝒩large
 
-Random.seed!(666) # nice!!
+n_times = 300
 
-# In the followoing, Omessages determines the message sent from observations
- δ = 0.00 # in the guided process assume some noise 
- Omessages = SA[1.0-δ δ/2.0 δ/2.0; δ/2.0 1.0- δ δ/2.0; δ/2.0 δ/2.0 1-δ]
+x0 = vcat(_I_, fill(_S_,n_particles-2),_I_) 
 
-Xtrue = sample_trajectory(Ptrue::SIRforward, n_times, x0)
+# simulate forward path 
+Xtrue = sample_trajectory(Ptrue, n_times, x0)  
+plotpath(Xtrue)
 
-samplesize = (n_times * n_particles)÷10   #20
-𝒪 = create_data(Xtrue, samplesize, n_times, n_particles, Omessages)
 
-#obs_times = 10:10:n_times  ## adjusted temporary!
-obs_times = [10, 30,40,60,75,100]
+samplesize = (n_times * n_particles)÷25
+𝒪1 = create_data(Xtrue, samplesize, n_times, n_particles, O)
+
+obs_times = 25:25:n_times
 𝒪2 = create_data_regular(Xtrue, obs_times, n_times, n_particles, O)
 
 obs_particles = 5:7:n_particles 
@@ -142,72 +184,156 @@ obs_particles = 5:7:n_particles
 #
 
 
+
 # visualise
-lo = @layout [a;b]
+#lo = @layout [a;b]
 pforward = plotpath(Xtrue;name="True, unobserved")
-pobs = plotpath(𝒪;name="What we observe")
-pp = plot(pforward, pobs, layout=lo)
-png(pp,  presfigdir*"/large_example_forw_and_observe1.png")
+png(pforward,  presfigdir*"/large_example_forward_$case.png")
+
+#pforward.attr[:size]
+pobs = plotpath(𝒪1;name="What we observe")
+png(pobs,  presfigdir*"/large_example_observe1_$case.png")
+#pp = plot(pforward, pobs, layout=lo, margi)
+#png(pp,  presfigdir*"/large_example_forw_and_observe1.png")
 
 pobs2 = plotpath(𝒪2;name="What we observe")
-pp = plot(pforward, pobs2, layout=lo)
-png(pp,  presfigdir*"/large_example_forw_and_observe2.png")
+png(pobs2,  presfigdir*"/large_example_observe2_$case.png")
+# pp = plot(pforward, pobs2, layout=lo, size=(600,800))
+# png(pp,  presfigdir*"/large_example_forw_and_observe2.png")
+
+pobs3 = plotpath(𝒪3;name="What we observe")
+png(pobs,  presfigdir*"/large_example_observe3_$case.png")
+# pp = plot(pforward, pobs3, layout=lo)
+# png(pp,  presfigdir*"/large_example_forw_and_observe3.png")
 
 
-
-###############################################################
+#################### GUIDING #################################
 Random.seed!(58) 
 
-# set guided process
+
+# choose observations scheme
 𝒪 = 𝒪2
+
+# Omessages determines the message sent from observations
+δ = δobs # in the guided process assume some noise 
+Omessages = SA[1.0-δ δ/2.0 δ/2.0; δ/2.0 1.0- δ δ/2.0; δ/2.0 δ/2.0 1-δ]
+
 pobs = plotpath(𝒪;name="What we observe")
 ℐ =  initialise_infected_neighbours(𝒪)
-P = SIRguided(Ptrue, ℐ, 𝒪, O) 
-Π = [SA_F64[0.96, 0.04, 0.0] for _ in 1:n_particles]
+P = SIRguided(Ptrue, ℐ, 𝒪, Omessages) 
+Πᵢ = 2.0/n_particles; Πₛ = 1.0 - Πᵢ
+Π = [SA_F64[Πₛ, Πᵢ, 0.0] for _ in 1:n_particles]
 B = backward(P);
 
 
 # sample guided process 
 Z = innovations(n_times, n_particles)
-Xguided, ll  = forward(P, Π, B, Z, prior);
+@time Xguided, ll  = forward(P, Π, B, Z, prior);
 ll_rounded = round(ll; digits=1)
 pguided = plotpath(Xguided; name="Reconstructed, ll is $ll_rounded")
 
 lo = @layout [a;b;c]
 pp = plot(pforward, pguided, pobs, layout=lo)
-png(pp,  presfigdir*"/large_example_forward_guided.png")
+png(pp,  presfigdir*"/large_example_forward_guided_$case.png")
 
 # sample multiple guided processes
 
-Zbest = innovations(n_times, n_particles)
-Xguidedbest, llbest = forward(P, Π, B, Zbest, prior)
+# Zbest = innovations(n_times, n_particles)
+# Xguidedbest, llbest = forward(P, Π, B, Zbest, prior)
 
-lo = @layout [a;b]
-anim4 = @animate for i in 1:30
-global llbest    
-    Z = innovations(n_times, n_particles)
-    Xguided, ll  = forward(P, Π, B, Z, prior);
-    lll =  round(ll; digits=1)
-    pguided = plotpath(Xguided; name="Reconstructed. $lll")
-    if ll > llbest
-        Zbest .= Z
-        llbest = ll
-    end
-    @show ll
-    pp = plot(pforward, pguided, layout=lo)#, size=(400, 790))
-    pp
-end
-@show llbest
+# lo = @layout [a;b]
+# anim4 = @animate for i in 1:30
+# global llbest    
+#     Z = innovations(n_times, n_particles)
+#     Xguided, ll  = forward(P, Π, B, Z, prior);
+#     lll =  round(ll; digits=1)
+#     pguided = plotpath(Xguided; name="Reconstructed. $lll")
+#     if ll > llbest
+#         Zbest .= Z
+#         llbest = ll
+#     end
+#     @show ll
+#     pp = plot(pforward, pguided, layout=lo)#, size=(400, 790))
+#     pp
+# end
+# @show llbest
 
-mp4(anim4,presfigdir*"/multipleguided.mp4", fps=2)
+# mp4(anim4,presfigdir*"/multipleguided.mp4", fps=2)
 
 
-Xguidedbest, llbest = forward(P, Π, B, Zbest, prior)
-lo = @layout [a;b;c]
-plot(pforward, plotpath(Xguidedbest), pobs, layout=lo)
+# Xguidedbest, llbest = forward(P, Π, B, Zbest, prior)
+# lo = @layout [a;b;c]
+# plot(pforward, plotpath(Xguidedbest), pobs, layout=lo)
 
 
 # perhaps do smc lagged filtering from here?
+
+n_ensemble = 10_000
+# filter_times = [0, 38, 40] # should include 0
+filter_times =  vcat(0,100:100:ntimes(P))
+#filter_times = vcat(0, obstimes(P))
+
+Random.seed!(2)
+𝕏, logweights = filter(P, Π, prior, n_ensemble, filter_times);
+
+plotpath(𝕏[1]; xlims_=(1,n_times))
+plotpath(𝕏[3]; xlims_=(1,n_times))
+plotpath(𝕏[4]; xlims_=(1,n_times))
+
+p = plotpath(𝕏[1]; name="Reconstructed")
+png(p,  presfigdir*"/large_example_reconstructed2_$case.png")
+
+# so we have learned roughly where the infections are 
+ℐ_up =count_infections(𝕏[1], P.𝒩)
+P_up = SIRguided(Ptrue, ℐ_up, 𝒪, Omessages) 
+
+𝕏_up, logweights_up = filter(P_up, Π, prior, n_ensemble, filter_times);
+p_up = plotpath(𝕏_up[1]; name="Reconstructed")
+png(p_up,  presfigdir*"/large_example_reconstructed2up_$case.png")
+
+
+plot(p, p_up)
+
+# alternatively backward filter all (this can be bad)
+Z = innovations(ntimes(P), nparticles(P))
+Xguided, ll  = forward(P_up, Π, B, Z, prior);
+ll_rounded = round(ll; digits=1)
+pguided = plotpath(Xguided; name="Reconstructed, ll is $ll_rounded")
+
+lo = @layout [a;b;c]
+pp = plot(pforward, pguided, pobs, layout=lo)
+
+
+# anim_smc = @animate for  x ∈ 𝕏
+#     #plotpath(𝕏[1]; xlims_=(1,n_times))
+#     plot(pforward, plotpath(x), pobs, layout=lo)
+# end
+
+# mp4(anim_smc,presfigdir*"/smc_example_$case.mp4", fps=14)
+
+plot(plot_infections(𝕏[98], P.𝒩), plot_infections(Xtrue, P.𝒩))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # now do mcmc, write function that also makes multipleguided_animation_unknownpar

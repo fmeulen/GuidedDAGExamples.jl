@@ -8,8 +8,11 @@
 
 %\usepackage[dvipsnames]{xcolor}
 \usepackage{hyperref}
-
+\usepackage{xcolor}
 \usepackage{graphicx} % Allows including images
+
+\usepackage{pict2e} % Required for creating graphics
+
 
 %\usepackage{fontspec}
 %\setmainfont{Avenir}
@@ -19,10 +22,67 @@
 \usepackage{hyperref} 
 \usepackage{graphicx}
 
+\definecolor{darkgreen}{RGB}{0, 150, 0} % RGB values for dark green
 \begin{document}
 
-\begin{frame}{Zes personen op een rijtje...}
 
+\begin{frame}{Het kleurenschema}
+
+
+  \centering
+      \centering
+    \colorbox{yellow}{\parbox{1cm}{\hspace{1cm}\vspace{1cm}}} \hspace{1cm} % Large yellow box
+    \colorbox{red!90}{\parbox{1cm}{\hspace{1cm}\vspace{1cm}}} \hspace{1cm}                % Large red box
+     \colorbox{darkgreen}{\parbox{1cm}{\hspace{1cm}\vspace{1cm}}} \hspace{1cm} \\ % Large green box
+     \vspace{0.5cm}
+S \hspace{2cm}  I \hspace{2cm} R
+
+\bigskip
+
+
+\begin{itemize}
+	\item Susceptible
+	\item Infected
+	\item Recovered
+\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}{De spelregels}
+
+
+ \uncover<2->{In een klein tijdsinterval $[t, t+h]$.}
+\begin{center}
+\begin{picture}(400, 220) % Adjust the size as needed
+    % Define states in a triangular arrangement
+    \put(200, 200){\circle{40}} % Circle for S
+    \put(200, 200){\makebox(0,0)[c]{\textbf{S}}} % Label S
+
+    \put(100, 100){\circle{40}} % Circle for I
+    \put(100, 100){\makebox(0,0)[c]{\textbf{I}}} % Label I
+
+    \put(300, 100){\circle{40}} % Circle for R
+    \put(300, 100){\makebox(0,0)[c]{\textbf{R}}} % Label R
+
+    % Arrows and labels
+    \put(195, 190){\vector(-1,-1){85}} % Arrow from S to I
+ \uncover<2->{   \put(140, 160){\makebox(0,0)[c]{$h \lambda N$}} }% Label for S to I
+
+    \put(110, 100){\vector(1,0){180}} % Arrow from I to R
+ \uncover<2->{    \put(200, 110){\makebox(0,0)[c]{$h \mu$}} }% Label for I to R
+
+    \put(290, 110){\vector(-1,1){82}} % Arrow from R to S
+ \uncover<2->{    \put(260, 160){\makebox(0,0)[c]{$h \nu$}} }% Label for R to S
+
+\end{picture}
+\end{center}
+\end{frame}
+
+
+
+\begin{frame}{Zes personen op een rijtje...}
+\begin{center}
 \only<1>{\includegraphics[scale=0.5]{smallexample1.png} }
 \only<2>{\includegraphics[scale=0.5]{smallexample2.png} }	
 \only<3>{\includegraphics[scale=0.5]{smallexample3.png} }	
@@ -30,6 +90,8 @@
 \only<5>{\includegraphics[scale=0.5]{smallexample5.png} }	
 \only<6>{\includegraphics[scale=0.5]{smallexample6.png} }	
 \only<7>{\includegraphics[scale=0.5]{smallexample7.png} }	
+
+\end{center}
 \end{frame}
 
 
@@ -57,7 +119,7 @@
 
 \begin{frame}{Andere realisaties}
 
-
+\begin{center}
 
 \only<1>{\includegraphics[scale=0.5]{large_example1.png} }
 \only<2>{\includegraphics[scale=0.5]{large_example2.png} }	
@@ -67,10 +129,11 @@
 \only<6>{\includegraphics[scale=0.5]{large_example6.png} }	
 \only<7>{\includegraphics[scale=0.5]{large_example7.png} }	
 \only<8>{\includegraphics[scale=0.5]{large_example8.png} }	
+\end{center}
 \end{frame}
 
 \begin{frame}{Als we sneller gemiddeld 3x zo snel weer susceptible zijn na recovered}
-
+\begin{center}
 \only<1>{\includegraphics[scale=0.5]{large_example_faster_susceptible1.png} }
 \only<2>{\includegraphics[scale=0.5]{large_example_faster_susceptible2.png} }	
 \only<3>{\includegraphics[scale=0.5]{large_example_faster_susceptible3.png} }	
@@ -80,54 +143,114 @@
 \only<7>{\includegraphics[scale=0.5]{large_example_faster_susceptible7.png} }	
 \only<8>{\includegraphics[scale=0.5]{large_example_faster_susceptible8.png} }	
 
-	
+	\end{center}
 \end{frame}
 
+
+%\begin{frame}{We krijgen niet alle informatie}
+%\begin{center}
+%\only<1>{\includegraphics[scale=0.5]{large_example_forw_and_observe1.png}}
+%\only<2>{\includegraphics[height=0.8\textheight]{large_example_forw_and_observe2.png}}	
+%\end{center}
+%\end{frame}
+
+\begin{frame}{Hoe het virus zich verspreid heeft}
+\begin{center}
+\includegraphics[scale=0.5]{large_example_forward_1.png}
+\end{center}
+\end{frame}
 
 \begin{frame}{We krijgen niet alle informatie}
-
-\only<1>{\includegraphics[scale=0.5]{large_example_forw_and_observe1.png}}
-\only<2>{\includegraphics[scale=0.5]{large_example_forw_and_observe2.png}}	
+\begin{center}
+\includegraphics[height=0.8\textheight]{large_example_observe1_1.png}	
+\end{center}
 \end{frame}
+
+\begin{frame}{We krijgen niet alle informatie}
+\begin{center}
+\includegraphics[height=0.8\textheight]{large_example_observe2_1.png}	
+\end{center}
+\end{frame}
+
 	
 	
 \begin{frame}{Het invullen van de kleurplaat heeft vele mogelijkheden}
 
 \begin{itemize}
-	\item $50 \times 100=5000$ vakjes.
-	\item $3^{5000}$ mogelijkheden?
+	\item $300 \times 100=30\_000$ vakjes.
+	\item $3^{30\_000}$ mogelijkheden?
+%	\item \#hoedan?
 \end{itemize}
 
 	
 \end{frame}
-	
 
+%------------------------
 \begin{frame}{Een reconstructie}	
 
 \begin{center}
-\includegraphics[scale=0.5]{large_example_forward_guided.png}	
+\includegraphics[scale=0.5]{large_example_reconstructed2_1.png}	
+\end{center}
+	
+\end{frame}
+%------------------------
+\begin{frame}{Hoe het daadwerkelijk gegaan is en de observaties}
+\begin{center}
+\includegraphics[width=0.49\textwidth]{large_example_forward_1.png} 
+	\includegraphics[width=0.49\textwidth]{large_example_observe2_1.png}	
 \end{center}
 
-\includegraphics[scale=0.5]{large_example_forward_guided.png}
-	
-\end{frame}
+\end{frame}	
+%------------------------
 
 
-\begin{frame}{Meer reconstructies}
+\begin{frame}{Hoe het daadwerkelijk gegaan is en de reconstructie}
+\begin{center}
+\includegraphics[width=0.49\textwidth]{large_example_forward_1.png} 
+	\includegraphics[width=0.49\textwidth]{large_example_reconstructed2_1.png}	
+\end{center}
+
+\end{frame}	
+%--------------------------------
+
+\begin{frame}{Hoe het daadwerkelijk gegaan is en de reconstructie (iteratie 2)}
+\begin{center}
+\includegraphics[width=0.49\textwidth]{large_example_forward_1.png} 
+	\includegraphics[width=0.49\textwidth]{large_example_reconstructed2up_1.png}	
+\end{center}
+
+\end{frame}	
 
 
- \href{run:multipleguided.mp4}{Click here to play the video}
-	
-\end{frame}
+%--------------------------------
+
+\begin{frame}{Een 2de voorbeeld: hoe het daadwerkelijk gegaan is en de reconstructie}
+\begin{center}
+\includegraphics[width=0.49\textwidth]{large_example_forward_2.png} 
+	\includegraphics[width=0.49\textwidth]{large_example_reconstructed2up_2.png}	
+\end{center}
+
+\end{frame}	
 
 
 
-\begin{frame}{Markov chain Monte Carlo}
 
-
- \href{run:mcmc_guided.mp4}{Click here to play the video}
-	
-\end{frame}
+%
+%\begin{frame}{Meer reconstructies}
+%
+%
+% \href{run:multipleguided.mp4}{Click here to play the video}
+%	
+%\end{frame}
+%
+%
+%
+%\begin{frame}{Markov chain Monte Carlo}
+%
+%
+% \href{run:mcmc_guided.mp4}{Click here to play the video}
+%	
+%\end{frame}
 
 
 \end{document}

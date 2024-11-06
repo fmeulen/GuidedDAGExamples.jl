@@ -32,6 +32,14 @@ param(P::SIRguided) = (λ=P.λ, μ=P.μ, ν=P.ν)
 nparticles(P::SIRguided) = length(P.𝒩)
 ntimes(P::SIRguided) = length(P.𝒪)
 
+function obstimes(P::SIRguided)
+    𝒪_ = P.𝒪
+    out = Int[]
+    for i ∈ eachindex(𝒪_)
+        length(𝒪[i].ind)>0 && push!(out,i)
+    end
+    out
+end
 
 @enum State::UInt8 _S_=1 _I_=2 _R_=3 _L_=0
 const 𝒳 = @SVector [_S_,_I_,_R_]

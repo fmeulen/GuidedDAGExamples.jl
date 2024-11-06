@@ -37,6 +37,7 @@ include("forward.jl")
 include("mcmc.jl")
 include("partition.jl")
 include("plotting.jl")
+include("filtering.jl")
 
 
 include("BoyenKollerFiltering.jl")
