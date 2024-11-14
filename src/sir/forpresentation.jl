@@ -67,8 +67,15 @@ anim = @animate for i in 1:n_times
 end
 mp4(anim,presfigdir*"/smallexample.mp4", fps=1.5)
 
-
-
+## A few small figures to illustrate the difficulty of imputing when pars are not known
+X1 = [[_S_],  [_L_], [_L_], [_L_], [_L_], [_L_], [_L_], [_L_], [_L_], [_L_], [_L_], [_L_], [_L_], [_L_],[_S_]]
+X2 = [[_S_],  [_S_], [_S_], [_S_], [_S_], [_S_], [_S_], [_S_], [_S_], [_S_], [_S_], [_S_], [_S_], [_S_] ,[_S_]]
+X3 = [[_S_],  [_S_], [_I_], [_I_], [_I_], [_R_], [_R_], [_R_], [_R_], [_R_], [_R_], [_S_], [_S_], [_S_],[_S_]]
+lo = @layout [a;b;c]
+p_imp = plot(plotpath(X1;name="what we observe"),
+plotpath(X2;name="if no change in status"),
+plotpath(X3;name="if one cycle of infection"), layout=lo)
+png(p_imp, presfigdir*"/small_imputation.png")
 
 ## now a bigger example 
 n_particles = 50

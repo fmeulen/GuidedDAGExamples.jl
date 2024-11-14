@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.11.27)  6 NOV 2024 09:16
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.11.27)  6 NOV 2024 10:05
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -623,22 +623,22 @@ File: l3backend-pdfmode.def 2020-03-12 L3 backend support: PDF mode
 ) (/Users/frankvandermeulen/.julia/dev/GuidedDAGExamples.jl/src/sir/figs/presentation/.texpadtmp/sir_animations.aux)
 \openout1 = `sir_animations.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 26.
-LaTeX Font Info:    ... okay on input line 26.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 26.
-LaTeX Font Info:    ... okay on input line 26.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 26.
-LaTeX Font Info:    ... okay on input line 26.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 26.
-LaTeX Font Info:    ... okay on input line 26.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 26.
-LaTeX Font Info:    ... okay on input line 26.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 26.
-LaTeX Font Info:    ... okay on input line 26.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 26.
-LaTeX Font Info:    ... okay on input line 26.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 26.
-LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 29.
+LaTeX Font Info:    ... okay on input line 29.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 29.
+LaTeX Font Info:    ... okay on input line 29.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 29.
+LaTeX Font Info:    ... okay on input line 29.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 29.
+LaTeX Font Info:    ... okay on input line 29.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 29.
+LaTeX Font Info:    ... okay on input line 29.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 29.
+LaTeX Font Info:    ... okay on input line 29.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 29.
+LaTeX Font Info:    ... okay on input line 29.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 29.
+LaTeX Font Info:    ... okay on input line 29.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -694,7 +694,7 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 48
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 )) ABD: EveryShipout initializing macros
 \AtBeginShipoutBox=\box80
-Package hyperref Info: Link coloring OFF on input line 26.
+Package hyperref Info: Link coloring OFF on input line 29.
  (/usr/local/texlive/2020/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2019/09/16 v2.46 Cross-referencing by name of section
  (/usr/local/texlive/2020/texmf-dist/tex/latex/refcount/refcount.sty
@@ -704,9 +704,9 @@ Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 )
 \c@section@level=\count329
 )
-LaTeX Info: Redefining \ref on input line 26.
-LaTeX Info: Redefining \pageref on input line 26.
-LaTeX Info: Redefining \nameref on input line 26.
+LaTeX Info: Redefining \ref on input line 29.
+LaTeX Info: Redefining \pageref on input line 29.
+LaTeX Info: Redefining \nameref on input line 29.
  (/Users/frankvandermeulen/.julia/dev/GuidedDAGExamples.jl/src/sir/figs/presentation/.texpadtmp/sir_animations.out) (/Users/frankvandermeulen/.julia/dev/GuidedDAGExamples.jl/src/sir/figs/presentation/.texpadtmp/sir_animations.out)
 \@outlinefile=\write5
 \openout5 = `sir_animations.out'.
@@ -724,33 +724,33 @@ Dictionary: translator-numbers-dictionary, Language: English
 ) (/usr/local/texlive/2020/texmf-dist/tex/latex/translator/translator-theorem-dictionary-English.dict
 Dictionary: translator-theorem-dictionary, Language: English 
 ) (/Users/frankvandermeulen/.julia/dev/GuidedDAGExamples.jl/src/sir/figs/presentation/.texpadtmp/sir_animations.nav)
-LaTeX Font Info:    Trying to load font information for U+msa on input line 49.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 52.
  (/usr/local/texlive/2020/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 49.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 52.
  (/usr/local/texlive/2020/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 ) [1
 
 {/usr/local/texlive/2020/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-Overfull \hbox (1.6614pt too wide) in paragraph at lines 80--80
+Overfull \hbox (1.6614pt too wide) in paragraph at lines 83--83
  [] 
  []
 
 
-Overfull \vbox (69.30296pt too high) detected at line 80
+Overfull \vbox (69.30296pt too high) detected at line 83
  []
 
 [2
 
 ]
-Overfull \hbox (1.6614pt too wide) in paragraph at lines 80--80
+Overfull \hbox (1.6614pt too wide) in paragraph at lines 83--83
  [] 
  []
 
 
-Overfull \vbox (69.30296pt too high) detected at line 80
+Overfull \vbox (69.30296pt too high) detected at line 83
  []
 
 [3
@@ -759,10 +759,10 @@ Overfull \vbox (69.30296pt too high) detected at line 80
 <smallexample1.png, id=35, 602.25pt x 401.5pt>
 File: smallexample1.png Graphic file (type png)
 <use smallexample1.png>
-Package pdftex.def Info: smallexample1.png  used on input line 95.
+Package pdftex.def Info: smallexample1.png  used on input line 98.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 95
+Overfull \vbox (13.2976pt too high) detected at line 98
  []
 
 [4
@@ -771,10 +771,10 @@ Overfull \vbox (13.2976pt too high) detected at line 95
 <smallexample2.png, id=41, 602.25pt x 401.5pt>
 File: smallexample2.png Graphic file (type png)
 <use smallexample2.png>
-Package pdftex.def Info: smallexample2.png  used on input line 95.
+Package pdftex.def Info: smallexample2.png  used on input line 98.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 95
+Overfull \vbox (13.2976pt too high) detected at line 98
  []
 
 [5
@@ -783,10 +783,10 @@ Overfull \vbox (13.2976pt too high) detected at line 95
 <smallexample3.png, id=47, 602.25pt x 401.5pt>
 File: smallexample3.png Graphic file (type png)
 <use smallexample3.png>
-Package pdftex.def Info: smallexample3.png  used on input line 95.
+Package pdftex.def Info: smallexample3.png  used on input line 98.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 95
+Overfull \vbox (13.2976pt too high) detected at line 98
  []
 
 [6
@@ -795,10 +795,10 @@ Overfull \vbox (13.2976pt too high) detected at line 95
 <smallexample4.png, id=53, 602.25pt x 401.5pt>
 File: smallexample4.png Graphic file (type png)
 <use smallexample4.png>
-Package pdftex.def Info: smallexample4.png  used on input line 95.
+Package pdftex.def Info: smallexample4.png  used on input line 98.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 95
+Overfull \vbox (13.2976pt too high) detected at line 98
  []
 
 [7
@@ -807,10 +807,10 @@ Overfull \vbox (13.2976pt too high) detected at line 95
 <smallexample5.png, id=60, 602.25pt x 401.5pt>
 File: smallexample5.png Graphic file (type png)
 <use smallexample5.png>
-Package pdftex.def Info: smallexample5.png  used on input line 95.
+Package pdftex.def Info: smallexample5.png  used on input line 98.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 95
+Overfull \vbox (13.2976pt too high) detected at line 98
  []
 
 [8
@@ -819,10 +819,10 @@ Overfull \vbox (13.2976pt too high) detected at line 95
 <smallexample6.png, id=66, 602.25pt x 401.5pt>
 File: smallexample6.png Graphic file (type png)
 <use smallexample6.png>
-Package pdftex.def Info: smallexample6.png  used on input line 95.
+Package pdftex.def Info: smallexample6.png  used on input line 98.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 95
+Overfull \vbox (13.2976pt too high) detected at line 98
  []
 
 [9
@@ -831,10 +831,10 @@ Overfull \vbox (13.2976pt too high) detected at line 95
 <smallexample7.png, id=72, 602.25pt x 401.5pt>
 File: smallexample7.png Graphic file (type png)
 <use smallexample7.png>
-Package pdftex.def Info: smallexample7.png  used on input line 95.
+Package pdftex.def Info: smallexample7.png  used on input line 98.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 95
+Overfull \vbox (13.2976pt too high) detected at line 98
  []
 
 [10
@@ -847,10 +847,10 @@ Overfull \vbox (13.2976pt too high) detected at line 95
 <large_example1.png, id=90, 602.25pt x 401.5pt>
 File: large_example1.png Graphic file (type png)
 <use large_example1.png>
-Package pdftex.def Info: large_example1.png  used on input line 133.
+Package pdftex.def Info: large_example1.png  used on input line 136.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 133
+Overfull \vbox (13.2976pt too high) detected at line 136
  []
 
 [13
@@ -859,10 +859,10 @@ Overfull \vbox (13.2976pt too high) detected at line 133
 <large_example2.png, id=97, 602.25pt x 401.5pt>
 File: large_example2.png Graphic file (type png)
 <use large_example2.png>
-Package pdftex.def Info: large_example2.png  used on input line 133.
+Package pdftex.def Info: large_example2.png  used on input line 136.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 133
+Overfull \vbox (13.2976pt too high) detected at line 136
  []
 
 [14
@@ -871,10 +871,10 @@ Overfull \vbox (13.2976pt too high) detected at line 133
 <large_example3.png, id=103, 602.25pt x 401.5pt>
 File: large_example3.png Graphic file (type png)
 <use large_example3.png>
-Package pdftex.def Info: large_example3.png  used on input line 133.
+Package pdftex.def Info: large_example3.png  used on input line 136.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 133
+Overfull \vbox (13.2976pt too high) detected at line 136
  []
 
 [15
@@ -883,10 +883,10 @@ Overfull \vbox (13.2976pt too high) detected at line 133
 <large_example4.png, id=109, 602.25pt x 401.5pt>
 File: large_example4.png Graphic file (type png)
 <use large_example4.png>
-Package pdftex.def Info: large_example4.png  used on input line 133.
+Package pdftex.def Info: large_example4.png  used on input line 136.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 133
+Overfull \vbox (13.2976pt too high) detected at line 136
  []
 
 [16
@@ -895,10 +895,10 @@ Overfull \vbox (13.2976pt too high) detected at line 133
 <large_example5.png, id=115, 602.25pt x 401.5pt>
 File: large_example5.png Graphic file (type png)
 <use large_example5.png>
-Package pdftex.def Info: large_example5.png  used on input line 133.
+Package pdftex.def Info: large_example5.png  used on input line 136.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 133
+Overfull \vbox (13.2976pt too high) detected at line 136
  []
 
 [17
@@ -907,10 +907,10 @@ Overfull \vbox (13.2976pt too high) detected at line 133
 <large_example6.png, id=121, 602.25pt x 401.5pt>
 File: large_example6.png Graphic file (type png)
 <use large_example6.png>
-Package pdftex.def Info: large_example6.png  used on input line 133.
+Package pdftex.def Info: large_example6.png  used on input line 136.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 133
+Overfull \vbox (13.2976pt too high) detected at line 136
  []
 
 [18
@@ -919,10 +919,10 @@ Overfull \vbox (13.2976pt too high) detected at line 133
 <large_example7.png, id=127, 602.25pt x 401.5pt>
 File: large_example7.png Graphic file (type png)
 <use large_example7.png>
-Package pdftex.def Info: large_example7.png  used on input line 133.
+Package pdftex.def Info: large_example7.png  used on input line 136.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 133
+Overfull \vbox (13.2976pt too high) detected at line 136
  []
 
 [19
@@ -931,10 +931,10 @@ Overfull \vbox (13.2976pt too high) detected at line 133
 <large_example8.png, id=134, 602.25pt x 401.5pt>
 File: large_example8.png Graphic file (type png)
 <use large_example8.png>
-Package pdftex.def Info: large_example8.png  used on input line 133.
+Package pdftex.def Info: large_example8.png  used on input line 136.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 133
+Overfull \vbox (13.2976pt too high) detected at line 136
  []
 
 [20
@@ -943,10 +943,10 @@ Overfull \vbox (13.2976pt too high) detected at line 133
 <large_example_faster_susceptible1.png, id=140, 602.25pt x 401.5pt>
 File: large_example_faster_susceptible1.png Graphic file (type png)
 <use large_example_faster_susceptible1.png>
-Package pdftex.def Info: large_example_faster_susceptible1.png  used on input line 147.
+Package pdftex.def Info: large_example_faster_susceptible1.png  used on input line 150.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 147
+Overfull \vbox (13.2976pt too high) detected at line 150
  []
 
 [21
@@ -955,10 +955,10 @@ Overfull \vbox (13.2976pt too high) detected at line 147
 <large_example_faster_susceptible2.png, id=146, 602.25pt x 401.5pt>
 File: large_example_faster_susceptible2.png Graphic file (type png)
 <use large_example_faster_susceptible2.png>
-Package pdftex.def Info: large_example_faster_susceptible2.png  used on input line 147.
+Package pdftex.def Info: large_example_faster_susceptible2.png  used on input line 150.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 147
+Overfull \vbox (13.2976pt too high) detected at line 150
  []
 
 [22
@@ -967,10 +967,10 @@ Overfull \vbox (13.2976pt too high) detected at line 147
 <large_example_faster_susceptible3.png, id=152, 602.25pt x 401.5pt>
 File: large_example_faster_susceptible3.png Graphic file (type png)
 <use large_example_faster_susceptible3.png>
-Package pdftex.def Info: large_example_faster_susceptible3.png  used on input line 147.
+Package pdftex.def Info: large_example_faster_susceptible3.png  used on input line 150.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 147
+Overfull \vbox (13.2976pt too high) detected at line 150
  []
 
 [23
@@ -979,10 +979,10 @@ Overfull \vbox (13.2976pt too high) detected at line 147
 <large_example_faster_susceptible4.png, id=158, 602.25pt x 401.5pt>
 File: large_example_faster_susceptible4.png Graphic file (type png)
 <use large_example_faster_susceptible4.png>
-Package pdftex.def Info: large_example_faster_susceptible4.png  used on input line 147.
+Package pdftex.def Info: large_example_faster_susceptible4.png  used on input line 150.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 147
+Overfull \vbox (13.2976pt too high) detected at line 150
  []
 
 [24
@@ -991,10 +991,10 @@ Overfull \vbox (13.2976pt too high) detected at line 147
 <large_example_faster_susceptible5.png, id=164, 602.25pt x 401.5pt>
 File: large_example_faster_susceptible5.png Graphic file (type png)
 <use large_example_faster_susceptible5.png>
-Package pdftex.def Info: large_example_faster_susceptible5.png  used on input line 147.
+Package pdftex.def Info: large_example_faster_susceptible5.png  used on input line 150.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 147
+Overfull \vbox (13.2976pt too high) detected at line 150
  []
 
 [25
@@ -1003,10 +1003,10 @@ Overfull \vbox (13.2976pt too high) detected at line 147
 <large_example_faster_susceptible6.png, id=172, 602.25pt x 401.5pt>
 File: large_example_faster_susceptible6.png Graphic file (type png)
 <use large_example_faster_susceptible6.png>
-Package pdftex.def Info: large_example_faster_susceptible6.png  used on input line 147.
+Package pdftex.def Info: large_example_faster_susceptible6.png  used on input line 150.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 147
+Overfull \vbox (13.2976pt too high) detected at line 150
  []
 
 [26
@@ -1015,10 +1015,10 @@ Overfull \vbox (13.2976pt too high) detected at line 147
 <large_example_faster_susceptible7.png, id=178, 602.25pt x 401.5pt>
 File: large_example_faster_susceptible7.png Graphic file (type png)
 <use large_example_faster_susceptible7.png>
-Package pdftex.def Info: large_example_faster_susceptible7.png  used on input line 147.
+Package pdftex.def Info: large_example_faster_susceptible7.png  used on input line 150.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 147
+Overfull \vbox (13.2976pt too high) detected at line 150
  []
 
 [27
@@ -1027,10 +1027,10 @@ Overfull \vbox (13.2976pt too high) detected at line 147
 <large_example_faster_susceptible8.png, id=184, 602.25pt x 401.5pt>
 File: large_example_faster_susceptible8.png Graphic file (type png)
 <use large_example_faster_susceptible8.png>
-Package pdftex.def Info: large_example_faster_susceptible8.png  used on input line 147.
+Package pdftex.def Info: large_example_faster_susceptible8.png  used on input line 150.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 147
+Overfull \vbox (13.2976pt too high) detected at line 150
  []
 
 [28
@@ -1039,10 +1039,10 @@ Overfull \vbox (13.2976pt too high) detected at line 147
 <large_example_forward_1.png, id=190, 602.25pt x 401.5pt>
 File: large_example_forward_1.png Graphic file (type png)
 <use large_example_forward_1.png>
-Package pdftex.def Info: large_example_forward_1.png  used on input line 161.
+Package pdftex.def Info: large_example_forward_1.png  used on input line 164.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 161
+Overfull \vbox (13.2976pt too high) detected at line 164
  []
 
 [29
@@ -1051,7 +1051,7 @@ Overfull \vbox (13.2976pt too high) detected at line 161
 <large_example_observe1_1.png, id=196, 602.25pt x 401.5pt>
 File: large_example_observe1_1.png Graphic file (type png)
 <use large_example_observe1_1.png>
-Package pdftex.def Info: large_example_observe1_1.png  used on input line 167.
+Package pdftex.def Info: large_example_observe1_1.png  used on input line 170.
 (pdftex.def)             Requested size: 274.6123pt x 183.06946pt.
  [30
 
@@ -1059,7 +1059,7 @@ Package pdftex.def Info: large_example_observe1_1.png  used on input line 167.
 <large_example_observe2_1.png, id=202, 602.25pt x 401.5pt>
 File: large_example_observe2_1.png Graphic file (type png)
 <use large_example_observe2_1.png>
-Package pdftex.def Info: large_example_observe2_1.png  used on input line 173.
+Package pdftex.def Info: large_example_observe2_1.png  used on input line 176.
 (pdftex.def)             Requested size: 274.6123pt x 183.06946pt.
  [31
 
@@ -1069,10 +1069,10 @@ Package pdftex.def Info: large_example_observe2_1.png  used on input line 173.
 <large_example_reconstructed2_1.png, id=215, 602.25pt x 401.5pt>
 File: large_example_reconstructed2_1.png Graphic file (type png)
 <use large_example_reconstructed2_1.png>
-Package pdftex.def Info: large_example_reconstructed2_1.png  used on input line 195.
+Package pdftex.def Info: large_example_reconstructed2_1.png  used on input line 198.
 (pdftex.def)             Requested size: 301.12425pt x 200.7495pt.
 
-Overfull \vbox (13.2976pt too high) detected at line 195
+Overfull \vbox (13.2976pt too high) detected at line 198
  []
 
 [33
@@ -1080,34 +1080,34 @@ Overfull \vbox (13.2976pt too high) detected at line 195
  <./large_example_reconstructed2_1.png>]
 File: large_example_forward_1.png Graphic file (type png)
 <use large_example_forward_1.png>
-Package pdftex.def Info: large_example_forward_1.png  used on input line 203.
+Package pdftex.def Info: large_example_forward_1.png  used on input line 206.
 (pdftex.def)             Requested size: 195.1881pt x 130.12448pt.
 File: large_example_observe2_1.png Graphic file (type png)
 <use large_example_observe2_1.png>
-Package pdftex.def Info: large_example_observe2_1.png  used on input line 203.
+Package pdftex.def Info: large_example_observe2_1.png  used on input line 206.
 (pdftex.def)             Requested size: 195.1881pt x 130.12448pt.
  [34
 
 ]
 File: large_example_forward_1.png Graphic file (type png)
 <use large_example_forward_1.png>
-Package pdftex.def Info: large_example_forward_1.png  used on input line 213.
+Package pdftex.def Info: large_example_forward_1.png  used on input line 216.
 (pdftex.def)             Requested size: 195.1881pt x 130.12448pt.
 File: large_example_reconstructed2_1.png Graphic file (type png)
 <use large_example_reconstructed2_1.png>
-Package pdftex.def Info: large_example_reconstructed2_1.png  used on input line 213.
+Package pdftex.def Info: large_example_reconstructed2_1.png  used on input line 216.
 (pdftex.def)             Requested size: 195.1881pt x 130.12448pt.
  [35
 
 ]
 File: large_example_forward_1.png Graphic file (type png)
 <use large_example_forward_1.png>
-Package pdftex.def Info: large_example_forward_1.png  used on input line 222.
+Package pdftex.def Info: large_example_forward_1.png  used on input line 225.
 (pdftex.def)             Requested size: 195.1881pt x 130.12448pt.
 <large_example_reconstructed2up_1.png, id=231, 602.25pt x 401.5pt>
 File: large_example_reconstructed2up_1.png Graphic file (type png)
 <use large_example_reconstructed2up_1.png>
-Package pdftex.def Info: large_example_reconstructed2up_1.png  used on input line 222.
+Package pdftex.def Info: large_example_reconstructed2up_1.png  used on input line 225.
 (pdftex.def)             Requested size: 195.1881pt x 130.12448pt.
  [36
 
@@ -1115,12 +1115,12 @@ Package pdftex.def Info: large_example_reconstructed2up_1.png  used on input lin
 <large_example_forward_2.png, id=237, 602.25pt x 401.5pt>
 File: large_example_forward_2.png Graphic file (type png)
 <use large_example_forward_2.png>
-Package pdftex.def Info: large_example_forward_2.png  used on input line 233.
+Package pdftex.def Info: large_example_forward_2.png  used on input line 236.
 (pdftex.def)             Requested size: 195.1881pt x 130.12448pt.
 <large_example_reconstructed2up_2.png, id=238, 602.25pt x 401.5pt>
 File: large_example_reconstructed2up_2.png Graphic file (type png)
 <use large_example_reconstructed2up_2.png>
-Package pdftex.def Info: large_example_reconstructed2up_2.png  used on input line 233.
+Package pdftex.def Info: large_example_reconstructed2up_2.png  used on input line 236.
 (pdftex.def)             Requested size: 195.1881pt x 130.12448pt.
  [37
 
@@ -1134,11 +1134,11 @@ Package pdftex.def Info: large_example_reconstructed2up_2.png  used on input lin
 \tf@snm=\write8
 \openout8 = `sir_animations.snm'.
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 256.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 256.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 259.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 259.
  (/Users/frankvandermeulen/.julia/dev/GuidedDAGExamples.jl/src/sir/figs/presentation/.texpadtmp/sir_animations.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 256.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 256.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 259.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 259.
 Package rerunfilecheck Info: File `sir_animations.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
